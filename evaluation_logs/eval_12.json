@@ -1,0 +1,24 @@
+{
+  "results": {
+    "hellaswag": {
+      "acc": 0.5321649073889664,
+      "acc_stderr": 0.004979446038824758,
+      "acc_norm": 0.6842262497510456,
+      "acc_norm_stderr": 0.004638733202373878
+    }
+  },
+  "versions": {
+    "hellaswag": 0
+  },
+  "config": {
+    "model": "hf-causal-experimental",
+    "model_args": "checkpoint=/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune/pytorch_model.bin,peft=/mnt/beegfs/jli265/output/llm_pruner/c31/llama_tune,config_pretrained=baffo32/decapoda-research-llama-7B-hf",
+    "num_fewshot": 0,
+    "batch_size": "4",
+    "device": "cuda:0",
+    "no_cache": true,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "description_dict": {}
+  }
+}

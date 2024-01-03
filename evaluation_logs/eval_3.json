@@ -1,0 +1,24 @@
+{
+  "results": {
+    "arc_easy": {
+      "acc": 0.6313131313131313,
+      "acc_stderr": 0.009899640855681038,
+      "acc_norm": 0.502104377104377,
+      "acc_norm_stderr": 0.010259692651537032
+    }
+  },
+  "versions": {
+    "arc_easy": 0
+  },
+  "config": {
+    "model": "hf-causal-experimental",
+    "model_args": "checkpoint=/mnt/beegfs/jli265/output/llm_pruner/c30/llama_prune/pytorch_model.bin,config_pretrained=meta-llama/Llama-2-7b-hf",
+    "num_fewshot": 0,
+    "batch_size": "4",
+    "device": "cuda:0",
+    "no_cache": true,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "description_dict": {}
+  }
+}

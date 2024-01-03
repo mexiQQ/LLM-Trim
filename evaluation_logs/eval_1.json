@@ -1,0 +1,22 @@
+{
+  "results": {
+    "boolq": {
+      "acc": 0.6186544342507645,
+      "acc_stderr": 0.008495245917063557
+    }
+  },
+  "versions": {
+    "boolq": 1
+  },
+  "config": {
+    "model": "hf-causal-experimental",
+    "model_args": "checkpoint=/mnt/beegfs/jli265/output/llm_pruner/c30/llama_prune/pytorch_model.bin,config_pretrained=meta-llama/Llama-2-7b-hf",
+    "num_fewshot": 0,
+    "batch_size": "4",
+    "device": "cuda:0",
+    "no_cache": true,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "description_dict": {}
+  }
+}

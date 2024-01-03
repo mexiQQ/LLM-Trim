@@ -1,0 +1,8 @@
+[START] - Start Pruning Model
+[FINISH] - Finish Pruning Model
+[START] - Start Tuning
+[FINISH] - Finish Prune and Post-Training.
+[INFO] - The pruned model is at {/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune/pytorch_model.bin}, and the recovery weight is at {/mnt/beegfs/jli265/output/llm_pruner/c31/llama_tune}/
+You can use the command:
+       python generate.py --model_type tune_prune_LLM --ckpt /mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune/pytorch_model.bin --lora_ckpt /mnt/beegfs/jli265/output/llm_pruner/c31/llama_tune
+to use the pruned model

@@ -1,0 +1,524 @@
+[START] - Start Tuning
+[FINISH] - Finish Prune and Post-Training.
+[INFO] - The pruned model is at {/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune/pytorch_model.bin}, and the recovery weight is at {/mnt/beegfs/jli265/output/llm_pruner/c31/llama_tune}/
+You can use the command:
+       python generate.py --model_type tune_prune_LLM --ckpt /mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune/pytorch_model.bin --lora_ckpt /mnt/beegfs/jli265/output/llm_pruner/c31/llama_tune
+to use the pruned model
+GPU memory (GB): 42.00
+Occupied time (h): 144.00
+GPU ID: 0,1,2,3
+Try allocate GPU memory 1 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 2 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 3 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 4 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 5 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 6 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 7 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 8 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 9 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 10 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 11 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 12 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 13 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 14 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 15 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 16 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 17 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 18 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 19 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 20 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 21 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 22 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 23 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 24 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 25 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 26 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 27 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 28 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 29 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 30 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 31 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 32 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 33 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 34 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 35 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 36 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 37 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 38 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 39 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 40 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 41 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 42 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 43 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 44 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 45 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 46 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 47 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 48 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 49 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 50 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 51 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 52 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 53 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 54 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 55 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 56 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 57 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 58 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 59 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 60 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 61 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 62 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 63 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 64 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 65 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 66 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 67 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 68 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 69 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 70 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 71 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 72 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 73 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 74 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 75 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 76 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 77 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 78 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 79 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 80 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 81 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 82 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 83 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 84 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 85 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 86 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 87 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 88 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 89 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 90 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 91 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 92 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 93 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 94 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 95 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 96 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 97 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 98 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 99 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 100 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 101 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 102 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+Try allocate GPU memory 103 times >>>>>>>>>>>>>>>>>>>>
+GPU-0: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-1: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-2: Failed to allocate 42.00 GB GPU memory (5.02 GB available)
+GPU-3: Failed to all

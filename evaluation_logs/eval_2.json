@@ -1,0 +1,24 @@
+{
+  "results": {
+    "openbookqa": {
+      "acc": 0.288,
+      "acc_stderr": 0.02027150383507522,
+      "acc_norm": 0.394,
+      "acc_norm_stderr": 0.021874299301689257
+    }
+  },
+  "versions": {
+    "openbookqa": 0
+  },
+  "config": {
+    "model": "hf-causal-experimental",
+    "model_args": "checkpoint=/mnt/beegfs/jli265/output/llm_pruner/c30/llama_prune/pytorch_model.bin,config_pretrained=meta-llama/Llama-2-7b-hf",
+    "num_fewshot": 0,
+    "batch_size": "4",
+    "device": "cuda:0",
+    "no_cache": true,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "description_dict": {}
+  }
+}
