@@ -1,5 +1,7 @@
 Hi, this repo is forked from https://github.com/horseee/LLM-Pruner. We are too late to fork it from the original repo directly, thus we upload the code with our modification and explain it here.
 
+- Reweighted L2: https://github.com/mexiQQ/LLM-Pruner/blob/main/LLMPruner/pruner/hf_llama_pruner.py
+
 <p align="center">
 <img src="figures/logo.png" width="20%"> <br>
 </p>
