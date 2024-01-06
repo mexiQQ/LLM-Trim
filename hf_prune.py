@@ -108,15 +108,23 @@ def main(args):
                 LlamaRMSNorm: llama_pruner.hf_rmsnorm_pruner,
             },
             "root_module_types": None, 
-            "root_instances": [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)] +
-                              [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]
+            "root_instances": [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]
+            # "root_instances": [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)] +
+            #                   [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]
         }
         logger.log("Pruning Attention Layer = {}".format(list(range(args.block_attention_layer_start, args.block_attention_layer_end))))
         logger.log("Pruning MLP Layer = {}".format(list(range(args.block_mlp_layer_start, args.block_mlp_layer_end))))
 
+        ch_sparsity_dict = {}
+        for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+            ch_sparsity_dict[module] = 0 
+        for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+            ch_sparsity_dict[module] = 0 
+
         pruner = tp.pruner.MetaPruner(
             model,
             forward_prompts,
+            # ch_sparsity_dict=ch_sparsity_dict,
             **kwargs
         )
         model.zero_grad()
@@ -242,27 +250,27 @@ def main(args):
     model.config.bos_token_id = 1
     model.config.eos_token_id = 2
 
-    if args.test_after_train:
-        logger.log("\n==================Generation Results After Pruning================\n")
+    # if args.test_after_train:
+    #     logger.log("\n==================Generation Results After Pruning================\n")
         
-        model.eval()
-        with torch.no_grad():
-            for prompt in prompts:
-                input_ids = tokenizer(prompt, return_tensors="pt")['input_ids'].to(args.eval_device)
+    #     model.eval()
+    #     with torch.no_grad():
+    #         for prompt in prompts:
+    #             input_ids = tokenizer(prompt, return_tensors="pt")['input_ids'].to(args.eval_device)
 
-                generation_output = model.generate(
-                    input_ids=input_ids,
-                    do_sample=True,
-                    top_k=50,
-                    max_length=args.max_seq_len,
-                    top_p=args.top_p,
-                    temperature=args.temperature,
-                )
+    #             generation_output = model.generate(
+    #                 input_ids=input_ids,
+    #                 do_sample=True,
+    #                 top_k=50,
+    #                 max_length=args.max_seq_len,
+    #                 top_p=args.top_p,
+    #                 temperature=args.temperature,
+    #             )
                 
-                result = tokenizer.decode(generation_output[0])
-                logger.log(result)
+    #             result = tokenizer.decode(generation_output[0])
+    #             logger.log(result)
         
-        logger.log("\n==================Finish================\n")
+    #     logger.log("\n==================Finish================\n")
     
     ppl = PPLMetric(model, tokenizer, ['wikitext2', 'ptb'], args.max_seq_len, device=args.eval_device)
     logger.log("PPL after pruning: {}".format(ppl))

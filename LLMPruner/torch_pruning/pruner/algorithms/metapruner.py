@@ -250,6 +250,8 @@ class MetaPruner:
                 imp = self.estimate_importance(group, ch_groups=ch_groups, consecutive_groups=consecutive_groups)
                 if imp is None: continue
                 current_channels = self.DG.get_out_channels(module)
+                # import pdb;pdb.set_trace()
+
                 target_sparsity = self.get_target_sparsity(module)
                 n_pruned = current_channels - int(
                     self.layer_init_out_ch[module] *

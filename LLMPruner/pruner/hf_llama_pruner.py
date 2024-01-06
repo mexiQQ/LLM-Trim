@@ -347,9 +347,9 @@ class TaylorImportance(tp.importance.Importance):
     def __call__(self, group, ch_groups=1, consecutive_groups=1):
     
         # import pdb; pdb.set_trace()
-        print(group)
-        print("*" * 30)
-        print("*" * 30)
+        # print(group)
+        # print("*" * 30)
+        # print("*" * 30)
         group_multiplier= {}
         group_imp = []
 
@@ -369,7 +369,7 @@ class TaylorImportance(tp.importance.Importance):
                 ]:
                     continue
 
-                print(dep)
+                # print(dep)
                 # import pdb; pdb.set_trace()
                 if "q_proj" in layer_name:
                     group_multiplier["q_proj"] = 1 
@@ -405,7 +405,7 @@ class TaylorImportance(tp.importance.Importance):
                 ]:
                     continue
 
-                print(dep)
+                # print(dep)
                 # import pdb; pdb.set_trace()
                 if "gate_proj" in layer_name:
                     group_multiplier["gate_proj"] = torch.nn.functional.silu(
@@ -417,16 +417,47 @@ class TaylorImportance(tp.importance.Importance):
                     l2_norms = torch.norm(layer.weight, p=2, dim=0)
                     diagonal_matrix = torch.diag(l2_norms) 
                     group_multiplier["down_proj"] = diagonal_matrix
+                    group_multiplier["down_proj_l2_norm"] = l2_norms
 
-            # import pdb;pdb.set_trace()
-            merged_group_multiplier = torch.matmul(
-                group_multiplier["down_proj"], 
-                torch.mul(
+            import os
+            local_mode = os.environ.get('LOCAL_MODE')
+            if local_mode is None:
+                local_mode = "gate_up"
+
+            if local_mode == "up":
+                merged_group_multiplier = group_multiplier["up_proj"]
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
+            elif local_mode == "down":
+                group_imp = [group_multiplier["down_proj_l2_norm"]]
+            elif local_mode == "gate":
+                group_imp = [group_multiplier["gate_proj"]]
+            elif local_mode == "gate_up":
+                merged_group_multiplier = torch.mul(
                     group_multiplier["gate_proj"].unsqueeze(1).repeat(1, group_multiplier["up_proj"].shape[1]), 
                     group_multiplier["up_proj"]
                 )
-            )
-            group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
+            elif local_mode == "gate_down":
+                merged_group_multiplier = torch.mul(
+                    group_multiplier["down_proj_l2_norm"], 
+                    group_multiplier["gate_proj"], 
+                )
+                group_imp = [merged_group_multiplier]
+            elif local_mode == "up_down":
+                merged_group_multiplier = torch.matmul(
+                    group_multiplier["down_proj"], 
+                    group_multiplier["up_proj"]
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
+            elif local_mode == "all":
+                merged_group_multiplier = torch.matmul(
+                    group_multiplier["down_proj"], 
+                    torch.mul(
+                        group_multiplier["gate_proj"].unsqueeze(1).repeat(1, group_multiplier["up_proj"].shape[1]), 
+                        group_multiplier["up_proj"]
+                    )
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
 
         if len(group_imp)==0:
             return None

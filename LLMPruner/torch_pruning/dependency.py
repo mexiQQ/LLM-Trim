@@ -108,6 +108,7 @@ class Dependency(Edge):
 
     def __call__(self, idxs: list, **kwargs):
         self.handler.__self__.pruning_dim = self.target.pruning_dim
+        
         result = self.handler(
             self.target.module,
             idxs,
