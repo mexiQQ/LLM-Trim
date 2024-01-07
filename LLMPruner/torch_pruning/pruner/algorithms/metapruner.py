@@ -6,6 +6,27 @@ from .scheduler import linear_scheduler
 from ..import function
 from ... import ops, dependency
 
+def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1):
+    # L1 norm is the absolute values
+    weights = torch.abs(vector)
+
+    # Normalize the weights to create a probability distribution
+    probabilities = weights / weights.sum()
+    probabilities = probabilities ** p
+
+    # Sample based on these probabilities
+    sampled_indices = torch.multinomial(probabilities, len(vector)-exclude_num_samples, replacement=False)
+    
+    # Create a mask for all indices
+    mask = torch.ones(len(vector), dtype=torch.bool)
+
+    # Mark the sampled indices as False
+    mask[sampled_indices] = False
+
+    # Get the non-sampled indices
+    non_sampled_indices = torch.arange(len(vector))[mask]
+
+    return non_sampled_indices
 
 class MetaPruner:
     """
@@ -272,20 +293,32 @@ class MetaPruner:
 
                 imp_argsort = torch.argsort(imp)
                 
-                if ch_groups > 1:
-                    pruning_idxs = imp_argsort[:(n_pruned//ch_groups)]
-                    group_size = current_channels//ch_groups
-                    pruning_idxs = torch.cat(
-                        [pruning_idxs+group_size*i for i in range(ch_groups)], 0)
-                elif consecutive_groups > 1:
-                    pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
-                    group_size = consecutive_groups
-                    pruning_idxs = torch.cat(
-                        [torch.tensor([j+group_size*i for j in range(group_size)])
-                        for i in pruning_groups], 0)
+                do_sampling = True
+                
+                if do_sampling:
+                    import os
+                    sample_p = os.environ.get('SAMPLE_P')
+                    if sample_p is None:
+                        sample_p = 1
+                    else:
+                        sample_p = int(sample_p)
+                    pruning_idxs = sample_from_vector_exclude_indices(imp, p=p, exclude_num_samples=n_pruned)
                 else:
-                    pruning_idxs = imp_argsort[:n_pruned]
+                    if ch_groups > 1:
+                        pruning_idxs = imp_argsort[:(n_pruned//ch_groups)]
+                        group_size = current_channels//ch_groups
+                        pruning_idxs = torch.cat(
+                            [pruning_idxs+group_size*i for i in range(ch_groups)], 0)
+                    elif consecutive_groups > 1:
+                        pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
+                        group_size = consecutive_groups
+                        pruning_idxs = torch.cat(
+                            [torch.tensor([j+group_size*i for j in range(group_size)])
+                            for i in pruning_groups], 0)
+                    else:
+                        pruning_idxs = imp_argsort[:n_pruned]
 
+                
                 group = self.DG.get_pruning_group(
                     module, pruning_fn, pruning_idxs.tolist())
                 if self.DG.check_pruning_group(group):
