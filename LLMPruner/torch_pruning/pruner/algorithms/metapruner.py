@@ -302,7 +302,7 @@ class MetaPruner:
                         sample_p = 1
                     else:
                         sample_p = int(sample_p)
-                    pruning_idxs = sample_from_vector_exclude_indices(imp, p=p, exclude_num_samples=n_pruned)
+                    pruning_idxs = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned)
                 else:
                     if ch_groups > 1:
                         pruning_idxs = imp_argsort[:(n_pruned//ch_groups)]
