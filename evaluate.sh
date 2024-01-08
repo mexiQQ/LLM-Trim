@@ -52,18 +52,28 @@ run_evaluation_peft() {
 # run_evaluation 1 c31/llama_prune/pytorch_model.bin openbookqa 6
 # run_evaluation 2 c31/llama_prune/pytorch_model.bin arc_easy 7
 # run_evaluation 3 c31/llama_prune/pytorch_model.bin hellaswag 8
+
 # run_evaluation_peft 0 c31/llama_prune/pytorch_model.bin c31/llama_tune boolq 9
 # run_evaluation_peft 1 c31/llama_prune/pytorch_model.bin c31/llama_tune openbookqa 10 
 # run_evaluation_peft 2 c31/llama_prune/pytorch_model.bin c31/llama_tune arc_easy 11 
 # run_evaluation_peft 3 c31/llama_prune/pytorch_model.bin c31/llama_tune hellaswag 12 
 
-run_evaluation 0 c31/llama_prune_wo_data/pytorch_model.bin boolq 13 
-run_evaluation 1 c31/llama_prune_wo_data/pytorch_model.bin openbookqa 14
-run_evaluation 2 c31/llama_prune_wo_data/pytorch_model.bin arc_easy 15 
-run_evaluation 3 c31/llama_prune_wo_data/pytorch_model.bin hellaswag 16 
-run_evaluation 0 c31/llama_prune_wo_data/pytorch_model.bin winogrande 17 
-run_evaluation 1 c31/llama_prune_wo_data/pytorch_model.bin arc_challenge 18 
-run_evaluation 2 c31/llama_prune_wo_data/pytorch_model.bin piqa 19
+# run_evaluation 0 c31/llama_prune_wo_data/pytorch_model.bin boolq 13 
+# run_evaluation 1 c31/llama_prune_wo_data/pytorch_model.bin openbookqa 14
+# run_evaluation 2 c31/llama_prune_wo_data/pytorch_model.bin arc_easy 15 
+# run_evaluation 3 c31/llama_prune_wo_data/pytorch_model.bin hellaswag 16 
+# run_evaluation 0 c31/llama_prune_wo_data/pytorch_model.bin winogrande 17 
+# run_evaluation 1 c31/llama_prune_wo_data/pytorch_model.bin arc_challenge 18 
+# run_evaluation 2 c31/llama_prune_wo_data/pytorch_model.bin piqa 19
+
+# random_gate_p_3
+run_evaluation 0 c31/llama_prune_l2/pytorch_model.bin boolq 20
+run_evaluation 1 c31/llama_prune_l2/pytorch_model.bin openbookqa 21 
+run_evaluation 2 c31/llama_prune_l2/pytorch_model.bin arc_easy 22 
+run_evaluation 3 c31/llama_prune_l2/pytorch_model.bin hellaswag 23 
+run_evaluation 0 c31/llama_prune_l2/pytorch_model.bin winogrande 24 
+run_evaluation 1 c31/llama_prune_l2/pytorch_model.bin arc_challenge 25 
+run_evaluation 2 c31/llama_prune_l2/pytorch_model.bin piqa 26 
 
 wait
 

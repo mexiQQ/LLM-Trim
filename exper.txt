@@ -301,6 +301,16 @@
 [FINISH] - Finish Pruning Model with Local Mode: all and Pruning Ratio: 0.8
 
 
+
+
+
+
+
+
+
+
+
+
 [START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
 {'wikitext2': 15.43022309819552}
 {'wikitext2': 15.43022309819552, 'ptb': 26.09434828302453}

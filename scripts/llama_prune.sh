@@ -2,7 +2,7 @@ prune_ckpt_path='/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune_l2'
 # tune_ckpt_path='/mnt/beegfs/jli265/output/llm_pruner/c30/llama_tune'
 
 echo "[START] - Start Pruning Model"
-CUDA_VISIBLE_DEVICES=0 LOCAL_MODE=gate SAMPLE_P=3 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio 0.2 --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type taylor --test_after_train --taylor param_first --save_model 
+CUDA_VISIBLE_DEVICES=0 LOCAL_MODE=gate SAMPLE_P=3 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio 0.35 --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type taylor --test_after_train --taylor param_first --save_model #--global_pruning 
 echo "[FINISH] - Finish Pruning Model"
 
 # echo "[START] - Start Tuning"

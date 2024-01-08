@@ -293,8 +293,7 @@ class MetaPruner:
 
                 imp_argsort = torch.argsort(imp)
                 
-                do_sampling = True
-                
+                do_sampling = True 
                 if do_sampling:
                     import os
                     sample_p = os.environ.get('SAMPLE_P')
@@ -362,6 +361,7 @@ class MetaPruner:
             pruning_fn = group[0][0].handler
             pruning_indices = (imp <= thres).nonzero().view(-1)
             
+            # import pdb; pdb.set_trace()
             if pruning_indices.size(-1) == 0:
                 continue
             if ch_groups > 1:

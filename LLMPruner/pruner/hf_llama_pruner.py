@@ -372,22 +372,84 @@ class TaylorImportance(tp.importance.Importance):
                 # print(dep)
                 # import pdb; pdb.set_trace()
                 if "q_proj" in layer_name:
-                    group_multiplier["q_proj"] = 1 
+                    group_multiplier["q_proj"] = torch.norm(layer.weight, p=2, dim=1)
                 elif "k_proj" in layer_name:
-                    group_multiplier["k_proj"] = 1 
+                    group_multiplier["k_proj"] = torch.norm(layer.weight, p=2, dim=1)
                 elif "v_proj" in layer_name:
                     group_multiplier["v_proj"] = layer.weight
                 elif "o_proj" in layer_name:
                     l2_norms = torch.norm(layer.weight, p=2, dim=0)
                     diagonal_matrix = torch.diag(l2_norms) 
                     group_multiplier["o_proj"] = diagonal_matrix
+                    group_multiplier["o_proj_l2_norm"] = l2_norms
 
-            # import pdb;pdb.set_trace()
-            merged_group_multiplier = torch.matmul(
-                group_multiplier["o_proj"], 
-                group_multiplier["v_proj"]
-            )
-            group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
+
+            import os
+            local_mode = os.environ.get('LOCAL_MODE_2')
+            if local_mode is None:
+                local_mode = "kq_proj"
+
+            if local_mode == "k_proj":
+                group_imp = [group_multiplier["k_proj"]]
+            if local_mode == "q_proj":
+                group_imp = [group_multiplier["q_proj"]]
+            elif local_mode == "v_proj":
+                group_imp = [group_multiplier["v_proj"]]
+            elif local_mode == "o_proj":
+                group_imp = [group_multiplier["o_proj_l2_norm"]]
+            elif local_mode == "kq_proj":
+                k_importance = group_multiplier["k_proj"].reshape(-1, 128)
+                q_importance = group_multiplier["q_proj"].reshape(-1, 128)
+                importance_for_heads = torch.mul(q_importance, k_importance).sum(dim=1)
+                imp = importance_for_heads.unsqueeze(1).expand(-1, 128).reshape(-1)
+                group_imp = [imp]
+            elif local_mode == "vo_proj":
+                merged_group_multiplier = torch.matmul(
+                    group_multiplier["o_proj"], 
+                    group_multiplier["v_proj"]
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
+            elif local_mode == "kqv_proj":
+                k_importance = group_multiplier["k_proj"].reshape(-1, 128)
+                q_importance = group_multiplier["q_proj"].reshape(-1, 128)
+                importance_for_heads = torch.mul(q_importance, k_importance).sum(dim=1)
+                imp = importance_for_heads.unsqueeze(1).expand(-1, 128).reshape(-1)
+                diagonal_matrix = torch.diag(imp)  
+                merged_group_multiplier = torch.matmul(
+                    diagonal_matrix
+                    group_multiplier["v_proj"]
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]  
+            elif local_mode == "kqo_proj":
+                k_importance = group_multiplier["k_proj"].reshape(-1, 128)
+                q_importance = group_multiplier["q_proj"].reshape(-1, 128)
+                importance_for_heads = torch.mul(q_importance, k_importance).sum(dim=1)
+                imp = importance_for_heads.unsqueeze(1).expand(-1, 128).reshape(-1)
+                merged_group_multiplier = torch.mul(
+                    imp, 
+                    group_multiplier["o_proj_l2_norm"]
+                )
+                group_imp = [merged_group_multiplier]  
+            elif local_mode == "kqvo_proj":
+                k_importance = group_multiplier["k_proj"].reshape(-1, 128)
+                q_importance = group_multiplier["q_proj"].reshape(-1, 128)
+                importance_for_heads = torch.mul(q_importance, k_importance).sum(dim=1)
+                imp = importance_for_heads.unsqueeze(1).expand(-1, 128).reshape(-1)
+                diagonal_matrix = torch.diag(imp)  
+                merged_group_multiplier = torch.matmul(
+                    group_multiplier["o_proj"],
+                    torch.matmul(
+                        diagonal_matrix,
+                        group_multiplier["v_proj"]
+                    )
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]  
+            else:
+                merged_group_multiplier = torch.matmul(
+                    group_multiplier["o_proj"], 
+                    group_multiplier["v_proj"]
+                )
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
 
         elif "mlp" in group[0][0].target.name:
             # mlp group
