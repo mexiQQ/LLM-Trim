@@ -17,6 +17,7 @@ class Importance(abc.ABC):
 class MagnitudeImportance(Importance):
     def __init__(self, p=2, group_reduction="mean", normalizer=None):
         self.p = p
+        self.name = "l2" if p==2 else "l1"
         self.group_reduction = group_reduction
         self.normalizer = normalizer
 
@@ -199,6 +200,7 @@ class RandomImportance(Importance):
     @torch.no_grad()
     def __call__(self, group, **kwargs):
         _, idxs = group[0]
+        self.name = "random"
         return torch.rand(len(idxs))
 
 class GroupNormImportance(Importance):

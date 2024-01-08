@@ -293,7 +293,13 @@ class MetaPruner:
 
                 imp_argsort = torch.argsort(imp)
                 
-                do_sampling = True 
+                do_sampling = False 
+                if self.importance.name = "taylor":
+                    if "attn" in group[0][0].target.name:
+                        do_sampling = False 
+                    elif "mlp" in group[0][0].target.name:
+                        do_sampling = True 
+
                 if do_sampling:
                     import os
                     sample_p = os.environ.get('SAMPLE_P')

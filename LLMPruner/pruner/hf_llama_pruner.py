@@ -216,6 +216,7 @@ class TaylorImportance(tp.importance.Importance):
         self.group_reduction = group_reduction
         self.normalizer = normalizer
         self.taylor = taylor
+        self.name = "Taylor"
 
     def _reduce(self, group_imp):
         if self.group_reduction == "sum":
@@ -416,7 +417,7 @@ class TaylorImportance(tp.importance.Importance):
                 imp = importance_for_heads.unsqueeze(1).expand(-1, 128).reshape(-1)
                 diagonal_matrix = torch.diag(imp)  
                 merged_group_multiplier = torch.matmul(
-                    diagonal_matrix
+                    diagonal_matrix,
                     group_multiplier["v_proj"]
                 )
                 group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]  
@@ -450,7 +451,7 @@ class TaylorImportance(tp.importance.Importance):
                     group_multiplier["v_proj"]
                 )
                 group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
-
+            group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
         elif "mlp" in group[0][0].target.name:
             # mlp group
             # import pdb; pdb.set_trace()
