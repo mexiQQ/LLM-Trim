@@ -8,11 +8,11 @@ from ... import ops, dependency
 
 def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1):
     # L1 norm is the absolute values
-    weights = torch.abs(vector)
+    weights = torch.abs(vector) ** p
 
     # Normalize the weights to create a probability distribution
     probabilities = weights / weights.sum()
-    probabilities = probabilities ** p
+    # probabilities = probabilities ** p
 
     # Sample based on these probabilities
     sampled_indices = torch.multinomial(probabilities, len(vector)-exclude_num_samples, replacement=False)

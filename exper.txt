@@ -299,3 +299,182 @@
 {'wikitext2': 358.8169966923127}
 {'wikitext2': 358.8169966923127, 'ptb': 719.1895837886203}
 [FINISH] - Finish Pruning Model with Local Mode: all and Pruning Ratio: 0.8
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 15.43022309819552}
+{'wikitext2': 15.43022309819552, 'ptb': 26.09434828302453}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.2
+{'wikitext2': 15.703855414343392}
+{'wikitext2': 15.703855414343392, 'ptb': 26.453556883236853}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.2
+{'wikitext2': 15.734556979186685}
+{'wikitext2': 15.734556979186685, 'ptb': 26.453556883236853}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.2
+{'wikitext2': 15.920030957803608}
+{'wikitext2': 15.920030957803608, 'ptb': 26.66103470132838}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.2
+{'wikitext2': 16.61900425204837}
+{'wikitext2': 16.61900425204837, 'ptb': 27.886006392229614}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.2
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 18.721779026482544}
+{'wikitext2': 18.721779026482544, 'ptb': 30.62678644311483}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.3
+{'wikitext2': 17.864446345871784}
+{'wikitext2': 17.864446345871784, 'ptb': 29.33866439394716}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.3
+{'wikitext2': 17.79479946994832}
+{'wikitext2': 17.79479946994832, 'ptb': 29.110349096271467}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.3
+{'wikitext2': 18.323843311697065}
+{'wikitext2': 18.323843311697065, 'ptb': 29.975807060355134}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.3
+{'wikitext2': 18.868615759264884}
+{'wikitext2': 18.868615759264884, 'ptb': 30.68666283939559}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.3
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 23.80562446936611}
+{'wikitext2': 23.80562446936611, 'ptb': 37.160054292819765}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.4
+{'wikitext2': 22.10277408821932}
+{'wikitext2': 22.10277408821932, 'ptb': 35.52769382137767}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.4
+{'wikitext2': 22.016603538363892}
+{'wikitext2': 22.016603538363892, 'ptb': 34.84052601883783}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.4
+{'wikitext2': 22.450842133517945}
+{'wikitext2': 22.450842133517945, 'ptb': 35.11378365112735}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.4
+{'wikitext2': 22.319678873017494}
+{'wikitext2': 22.319678873017494, 'ptb': 35.87634357692165}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.4
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 35.52769382137767}
+{'wikitext2': 35.52769382137767, 'ptb': 50.990565478815945}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.5
+{'wikitext2': 32.159346537604755}
+{'wikitext2': 32.159346537604755, 'ptb': 46.427438201089}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.5
+{'wikitext2': 29.396022468352484}
+{'wikitext2': 29.396022468352484, 'ptb': 46.70027251047952}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.5
+{'wikitext2': 28.771203256660744}
+{'wikitext2': 28.771203256660744, 'ptb': 45.529450258314064}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.5
+{'wikitext2': 28.883810562338418}
+{'wikitext2': 28.883810562338418, 'ptb': 44.91121316574036}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.5
+
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 56.55175575986736}
+{'wikitext2': 56.55175575986736, 'ptb': 80.37625124290746}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.6
+{'wikitext2': 49.32531805312982}
+{'wikitext2': 49.32531805312982, 'ptb': 72.33079701870139}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.6
+{'wikitext2': 45.529450258314064}
+{'wikitext2': 45.529450258314064, 'ptb': 66.63425269055388}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.6
+{'wikitext2': 43.444504934395866}
+{'wikitext2': 43.444504934395866, 'ptb': 65.09067188950593}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.6
+{'wikitext2': 42.190180314697045}
+{'wikitext2': 42.190180314697045, 'ptb': 64.58413226217957}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.6
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 129.9549042642197}
+{'wikitext2': 129.9549042642197, 'ptb': 179.02044192165667}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.7
+{'wikitext2': 105.24068867470233}
+{'wikitext2': 105.24068867470233, 'ptb': 140.51475485198003}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.7
+{'wikitext2': 87.24759532868651}
+{'wikitext2': 87.24759532868651, 'ptb': 127.94014021950323}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.7
+{'wikitext2': 78.2082389954826}
+{'wikitext2': 78.2082389954826, 'ptb': 115.13366410675533}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.7
+{'wikitext2': 73.75739416067401}
+{'wikitext2': 73.75739416067401, 'ptb': 112.02812994692015}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.7
+
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 507.9935496710831}
+{'wikitext2': 507.9935496710831, 'ptb': 607.9886718701034}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.8
+{'wikitext2': 350.5050099164416}
+{'wikitext2': 350.5050099164416, 'ptb': 432.81591541665557}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.8
+{'wikitext2': 286.07385163895896}
+{'wikitext2': 286.07385163895896, 'ptb': 338.3966573919768}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.8
+{'wikitext2': 212.59203489720244}
+{'wikitext2': 212.59203489720244, 'ptb': 278.35749756134834}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_4 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.8
+{'wikitext2': 193.56725052076862}
+{'wikitext2': 193.56725052076862, 'ptb': 265.61057969554065}
+[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_5 and Pruning Ratio: 0.8

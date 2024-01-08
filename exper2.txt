@@ -1,6 +1,0 @@
-[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
-[START] - Start Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
-[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_1 and Pruning Ratio: 0.2
-[START] - Start Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.2
-[FINISH] - Finish Pruning Model with Local Mode: random_gate_p_2 and Pruning Ratio: 0.2
-[START] - Start Pruning Model with Local Mode: random_gate_p_3 and Pruning Ratio: 0.2
