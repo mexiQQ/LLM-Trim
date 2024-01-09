@@ -1,0 +1,44 @@
+[START] - Start Pruning Model with Local Mode: l2 and Pruning Ratio: 0.25
+{'wikitext2': 466.1610848325832}
+{'wikitext2': 466.1610848325832, 'ptb': 891.5564450560271}
+[FINISH] - Finish Pruning Model with Local Mode: l2 and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: random and Pruning Ratio: 0.25
+{'wikitext2': 22.538712245181248}
+{'wikitext2': 22.538712245181248, 'ptb': 40.1011996370117}
+[FINISH] - Finish Pruning Model with Local Mode: random and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: k_proj and Pruning Ratio: 0.25
+{'wikitext2': 33.96703939987107}
+{'wikitext2': 33.96703939987107, 'ptb': 64.58413226217957}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: q_proj and Pruning Ratio: 0.25
+{'wikitext2': 1516.5886008725572}
+{'wikitext2': 1516.5886008725572, 'ptb': 2385.928772621511}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: v_proj and Pruning Ratio: 0.25
+{'wikitext2': 34.4346215959791}
+{'wikitext2': 34.4346215959791, 'ptb': 64.33234259239626}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: o_proj and Pruning Ratio: 0.25
+{'wikitext2': 34.63697922255266}
+{'wikitext2': 34.63697922255266, 'ptb': 68.21443845541918}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: kq_proj and Pruning Ratio: 0.25
+{'wikitext2': 84.2335880783952}
+{'wikitext2': 84.2335880783952, 'ptb': 239.02364975839862}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: vo_proj and Pruning Ratio: 0.25
+{'wikitext2': 33.96703939987107}
+{'wikitext2': 33.96703939987107, 'ptb': 64.58413226217957}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: kqv_proj and Pruning Ratio: 0.25
+{'wikitext2': 64.83690740886694}
+{'wikitext2': 64.83690740886694, 'ptb': 98.09510821132314}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: kqo_proj and Pruning Ratio: 0.25
+{'wikitext2': 86.23113005463887}
+{'wikitext2': 86.23113005463887, 'ptb': 124.97641006343288}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj and Pruning Ratio: 0.25
+[START] - Start Pruning Model with Local Mode: kqvo_proj and Pruning Ratio: 0.25
+{'wikitext2': 30.388446900124176}
+{'wikitext2': 30.388446900124176, 'ptb': 52.19977189231385}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj and Pruning Ratio: 0.25

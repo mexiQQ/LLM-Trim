@@ -294,7 +294,7 @@ class MetaPruner:
                 imp_argsort = torch.argsort(imp)
                 
                 do_sampling = False 
-                if self.importance.name = "taylor":
+                if self.importance.name == "taylor":
                     if "attn" in group[0][0].target.name:
                         do_sampling = False 
                     elif "mlp" in group[0][0].target.name:

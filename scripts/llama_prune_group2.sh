@@ -11,14 +11,14 @@ pruning_ratios=(0.25)  # Add or modify ratios as needed
 
 # Loop over each local mode
 for pruning_ratio in "${pruning_ratios[@]}"; do
-    Loop over each pruning ratio
-    echo "[START] - Start Pruning Model with Local Mode: l2 and Pruning Ratio: $pruning_ratio"
-    CUDA_VISIBLE_DEVICES=0 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio $pruning_ratio --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type l2 --test_after_train --taylor param_first --save_model 
-    echo "[FINISH] - Finish Pruning Model with Local Mode: l2 and Pruning Ratio: $pruning_ratio"
+    # Loop over each pruning ratio
+    # echo "[START] - Start Pruning Model with Local Mode: l2 and Pruning Ratio: $pruning_ratio"
+    # CUDA_VISIBLE_DEVICES=0 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio $pruning_ratio --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type l2 --test_after_train --taylor param_first --save_model 
+    # echo "[FINISH] - Finish Pruning Model with Local Mode: l2 and Pruning Ratio: $pruning_ratio"
 
-    echo "[START] - Start Pruning Model with Local Mode: random and Pruning Ratio: $pruning_ratio"
-    CUDA_VISIBLE_DEVICES=0 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio $pruning_ratio --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type random --test_after_train --taylor param_first --save_model 
-    echo "[FINISH] - Finish Pruning Model with Local Mode: random and Pruning Ratio: $pruning_ratio"
+    # echo "[START] - Start Pruning Model with Local Mode: random and Pruning Ratio: $pruning_ratio"
+    # CUDA_VISIBLE_DEVICES=0 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio $pruning_ratio --device cuda  --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type random --test_after_train --taylor param_first --save_model 
+    # echo "[FINISH] - Finish Pruning Model with Local Mode: random and Pruning Ratio: $pruning_ratio"
 
     for local_mode in "${local_modes[@]}"; do
         echo "[START] - Start Pruning Model with Local Mode: $local_mode and Pruning Ratio: $pruning_ratio"

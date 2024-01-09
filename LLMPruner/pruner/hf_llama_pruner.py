@@ -131,6 +131,7 @@ hf_linear_pruner = HFLinearPrunner()
 class MagnitudeImportance(tp.importance.Importance):
     def __init__(self, p=2, group_reduction="mean", normalizer=None):
         self.p = p
+        self.name = "l2" if p==2 else "l1"
         self.group_reduction = group_reduction
         self.normalizer = normalizer
 
@@ -216,7 +217,7 @@ class TaylorImportance(tp.importance.Importance):
         self.group_reduction = group_reduction
         self.normalizer = normalizer
         self.taylor = taylor
-        self.name = "Taylor"
+        self.name = "taylor"
 
     def _reduce(self, group_imp):
         if self.group_reduction == "sum":
@@ -395,7 +396,8 @@ class TaylorImportance(tp.importance.Importance):
             if local_mode == "q_proj":
                 group_imp = [group_multiplier["q_proj"]]
             elif local_mode == "v_proj":
-                group_imp = [group_multiplier["v_proj"]]
+                merged_group_multiplier = group_multiplier["v_proj"]
+                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
             elif local_mode == "o_proj":
                 group_imp = [group_multiplier["o_proj_l2_norm"]]
             elif local_mode == "kq_proj":
@@ -451,7 +453,7 @@ class TaylorImportance(tp.importance.Importance):
                     group_multiplier["v_proj"]
                 )
                 group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
-            group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
+            # group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
         elif "mlp" in group[0][0].target.name:
             # mlp group
             # import pdb; pdb.set_trace()
