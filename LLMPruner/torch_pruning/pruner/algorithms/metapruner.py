@@ -6,25 +6,39 @@ from .scheduler import linear_scheduler
 from ..import function
 from ... import ops, dependency
 
-def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1):
+def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1, key=""):
     # L1 norm is the absolute values
     weights = torch.abs(vector) ** p
 
     # Normalize the weights to create a probability distribution
-    probabilities = weights / weights.sum()
+    probabilities = (weights / weights.sum()).cuda()
     # probabilities = probabilities ** p
 
-    # Sample based on these probabilities
-    sampled_indices = torch.multinomial(probabilities, len(vector)-exclude_num_samples, replacement=False)
-    
-    # Create a mask for all indices
-    mask = torch.ones(len(vector), dtype=torch.bool)
+    if "attn" in key:
+        noise_level = 0.9  # Vary this between 0 (no noise) and 1 (full noise)
+        num_choices = vector.shape[0] * 128
+        uniform_probabilities = torch.rand(num_choices).view(-1,128).sum(1).cuda()
+        uniform_probabilities = uniform_probabilities / uniform_probabilities.max()
+        # import pdb; pdb.set_trace()
+        blended_probabilities = (1 - noise_level) * probabilities + noise_level * uniform_probabilities
+        imp_argsort = torch.argsort(blended_probabilities)
+        non_sampled_indices = imp_argsort[:exclude_num_samples]
+    else:
+        noise_level = 0  # Vary this between 0 (no noise) and 1 (full noise)
+        num_choices = vector.shape[0] * 128
+        uniform_probabilities = torch.rand(num_choices).view(-1,128).sum(1).cuda()
+        blended_probabilities = (1 - noise_level) * probabilities + noise_level * uniform_probabilities
+        # Step 4: Sample using the blended distribution
+        sampled_indices = torch.multinomial(blended_probabilities, len(vector) - exclude_num_samples, replacement=False)
 
-    # Mark the sampled indices as False
-    mask[sampled_indices] = False
+        # Create a mask for all indices
+        mask = torch.ones(len(vector), dtype=torch.bool)
 
-    # Get the non-sampled indices
-    non_sampled_indices = torch.arange(len(vector))[mask]
+        # Mark the sampled indices as False
+        mask[sampled_indices] = False
+
+        # Get the non-sampled indices
+        non_sampled_indices = torch.arange(len(vector))[mask]
 
     return non_sampled_indices
 
@@ -289,25 +303,55 @@ class MetaPruner:
                     imp = imp[:len(imp)//ch_groups]
 
                 if consecutive_groups > 1:
-                    imp = imp.view(-1, consecutive_groups).sum(1)
+                    max_val = imp.max()
+                    scaled_imp = imp / max_val
+                    # log_scaled_imp = torch.log(imp / max_val)
+                    imp = scaled_imp.view(-1, consecutive_groups).sum(1)
 
                 imp_argsort = torch.argsort(imp)
                 
+                # import pdb; pdb.set_trace()
+                import os
                 do_sampling = False 
                 if self.importance.name == "taylor":
                     if "attn" in group[0][0].target.name:
-                        do_sampling = False 
+                        do_sampling = os.environ.get('DO_SAMPLE')
+                        if do_sampling == "true":
+                            do_sampling = False 
+                        else:
+                            do_sampling = False
+
                     elif "mlp" in group[0][0].target.name:
-                        do_sampling = True 
+                        do_sampling = False 
 
                 if do_sampling:
-                    import os
-                    sample_p = os.environ.get('SAMPLE_P')
-                    if sample_p is None:
-                        sample_p = 1
+                    # import pdb; pdb.set_trace()
+                    if "attn" in group[0][0].target.name:
+                        sample_p = os.environ.get('SAMPLE_P_2')
+                        if sample_p is None:
+                            sample_p = 1
+                        else:
+                            sample_p = int(sample_p)
+                    elif "mlp" in group[0][0].target.name:
+                        sample_p = os.environ.get('SAMPLE_P')
+                        if sample_p is None:
+                            sample_p = 1
+                        else:
+                            sample_p = int(sample_p) 
+
+                    if ch_groups > 1:
+                        pruning_idxs = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned//ch_groups, key=group[0][0].target.name)
+                        group_size = current_channels//ch_groups
+                        pruning_idxs = torch.cat(
+                            [pruning_idxs+group_size*i for i in range(ch_groups)], 0)
+                    elif consecutive_groups > 1:
+                        pruning_groups = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned//consecutive_groups, key=group[0][0].target.name)
+                        group_size = consecutive_groups
+                        pruning_idxs = torch.cat(
+                            [torch.tensor([j+group_size*i for j in range(group_size)])
+                            for i in pruning_groups], 0)
                     else:
-                        sample_p = int(sample_p)
-                    pruning_idxs = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned)
+                        pruning_idxs = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned, key=group[0][0].target.name)
                 else:
                     if ch_groups > 1:
                         pruning_idxs = imp_argsort[:(n_pruned//ch_groups)]
@@ -323,7 +367,6 @@ class MetaPruner:
                     else:
                         pruning_idxs = imp_argsort[:n_pruned]
 
-                
                 group = self.DG.get_pruning_group(
                     module, pruning_fn, pruning_idxs.tolist())
                 if self.DG.check_pruning_group(group):

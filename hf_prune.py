@@ -90,6 +90,12 @@ def main(args):
     else:
         raise NotImplementedError
 
+    # import pdb; pdb.set_trace()
+    # ppl = PPLMetric(model, tokenizer, [
+    #     'wikitext2', 
+    #     # 'ptb'
+    # ], args.max_seq_len, batch_size= 16, device=args.eval_device)
+    
     logger.log("Use {} pruner...".format(pruner_type))
     
     # import pdb; pdb.set_trace()
@@ -109,23 +115,23 @@ def main(args):
             },
             "root_module_types": None, 
             # "root_instances": [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]
-            # "root_instances": [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]
+            # # "root_instances": [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]
             "root_instances": [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)] +
                               [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]
         }
         logger.log("Pruning Attention Layer = {}".format(list(range(args.block_attention_layer_start, args.block_attention_layer_end))))
         logger.log("Pruning MLP Layer = {}".format(list(range(args.block_mlp_layer_start, args.block_mlp_layer_end))))
 
-        # ch_sparsity_dict = {}
-        # for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-        #     ch_sparsity_dict[module] = 0 
-        # for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-        #     ch_sparsity_dict[module] = 0 
+        ch_sparsity_dict = {}
+        for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+            ch_sparsity_dict[module] = 0.1
+        for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+            ch_sparsity_dict[module] = 0.3 
 
         pruner = tp.pruner.MetaPruner(
             model,
             forward_prompts,
-            # ch_sparsity_dict=ch_sparsity_dict,
+            ch_sparsity_dict=ch_sparsity_dict,
             **kwargs
         )
         model.zero_grad()
@@ -273,7 +279,10 @@ def main(args):
         
     #     logger.log("\n==================Finish================\n")
     
-    ppl = PPLMetric(model, tokenizer, ['wikitext2', 'ptb'], args.max_seq_len, device=args.eval_device)
+    ppl = PPLMetric(model, tokenizer, [
+        'wikitext2', 
+        'ptb'
+    ], args.max_seq_len, batch_size= 16, device=args.eval_device)
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 

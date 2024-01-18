@@ -141,28 +141,69 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
     return q_embed, k_embed
 
 
+i = 0
+mean_input_mlp = None
 class LlamaMLP(nn.Module):
     def __init__(
         self,
         hidden_size: int,
         intermediate_size: int,
         hidden_act: str,
+        index: int
     ):
         super().__init__()
+        self.index = index
         self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
         self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
         self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x):
-        return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        if self.index == 0:
+            global i
+            global mean_input_mlp
+            # 为了统计均值，查看 data sort norm 后，45% 55% 处的值和 random 的关系，是否和weight相近
+            if i >= 2:
+                if mean_input_mlp == None: 
+                    mean_input_mlp = x.view(-1, x.shape[-1]).mean(dim=0)
+                else:
+                    mean_input_mlp += x.view(-1, x.shape[-1]).mean(dim=0)
+                    mean_input_mlp /= i-1
+            i+=1
+            # import pdb; pdb.set_trace()
+            # if i == 160:
+                # import pdb; pdb.set_trace()
+        
+        # reshaped_x = x.view(-1, x.shape[-1])
+        # mean_x = torch.mean(reshaped_x, dim=0)
+        # demeaned_x = reshaped_x - mean_x
+        # cov_matrix = torch.matmul(demeaned_x.T, demeaned_x) / (demeaned_x.size(0) - 1)
+        # torch.save(cov_matrix, f'./cov/cov_matrix_{self.index}.pt')
+
+        gate = self.act_fn(self.gate_proj(x))
+        # matrix = gate
+        # values_in_range = (matrix >= -4) & (matrix <= -0.2785)
+        # hidden_dimension = gate.shape[-1]
+        # proportions = values_in_range.sum(dim=2) / hidden_dimension
+        # mean_proportion = proportions.mean().item()
+        # std_proportion = proportions.std().item()
+        # print("**" * 20)
+        # print(f"{self.index}th layer mean: {mean_proportion}, std: {std_proportion}")
+        # print("**" * 20)
+
+        up = self.up_proj(x)
+        down = self.down_proj(gate * up)
+        return down
+        # return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
+j = 0
 class LlamaAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
-    def __init__(self, config: LlamaConfig):
+    def __init__(self, config: LlamaConfig, index:int):
         super().__init__()
+        self.index = index
         self.config = config
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
@@ -193,6 +234,17 @@ class LlamaAttention(nn.Module):
         use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         bsz, q_len, _ = hidden_states.size()
+
+        if self.index == 0:
+            global j
+            j += 1
+            # import pdb; pdb.set_trace()
+
+        # reshaped_x = hidden_states.view(-1, hidden_states.shape[-1])
+        # mean_x = torch.mean(reshaped_x, dim=0)
+        # demeaned_x = reshaped_x - mean_x
+        # cov_matrix = torch.matmul(demeaned_x.T, demeaned_x) / (demeaned_x.size(0) - 1)
+        # torch.save(cov_matrix, f'./cov_attn/cov_matrix_{self.index}.pt')
 
         query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
@@ -251,14 +303,16 @@ class LlamaAttention(nn.Module):
 
 
 class LlamaDecoderLayer(nn.Module):
-    def __init__(self, config: LlamaConfig):
+    def __init__(self, config: LlamaConfig, index):
         super().__init__()
         self.hidden_size = config.hidden_size
-        self.self_attn = LlamaAttention(config=config)
+        self.self_attn = LlamaAttention(config=config, index=index)
+        self.index = index
         self.mlp = LlamaMLP(
             hidden_size=self.hidden_size,
             intermediate_size=config.intermediate_size,
             hidden_act=config.hidden_act,
+            index=index
         )
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -444,7 +498,7 @@ class LlamaModel(LlamaPreTrainedModel):
         self.vocab_size = config.vocab_size
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
-        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config, i) for i in range(config.num_hidden_layers)])
         self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
         self.gradient_checkpointing = False

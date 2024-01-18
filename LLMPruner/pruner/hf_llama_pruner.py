@@ -11,6 +11,7 @@ from operator import mul
 
 from typing import Callable, Sequence, Tuple, Dict
 from transformers.models.llama.modeling_llama import LlamaRotaryEmbedding
+import re
 
 ##############################
 # Pruners
@@ -371,19 +372,24 @@ class TaylorImportance(tp.importance.Importance):
                 ]:
                     continue
 
-                # print(dep)
                 # import pdb; pdb.set_trace()
                 if "q_proj" in layer_name:
                     group_multiplier["q_proj"] = torch.norm(layer.weight, p=2, dim=1)
+                    group_multiplier["C"] = layer.weight 
                 elif "k_proj" in layer_name:
                     group_multiplier["k_proj"] = torch.norm(layer.weight, p=2, dim=1)
+                    group_multiplier["D"] = layer.weight 
                 elif "v_proj" in layer_name:
                     group_multiplier["v_proj"] = layer.weight
+                    l2_norms = torch.norm(layer.weight, p=2, dim=0)
+                    group_multiplier["v_proj_l2_norm"] = l2_norms
+                    group_multiplier["A"] = layer.weight 
                 elif "o_proj" in layer_name:
                     l2_norms = torch.norm(layer.weight, p=2, dim=0)
                     diagonal_matrix = torch.diag(l2_norms) 
                     group_multiplier["o_proj"] = diagonal_matrix
                     group_multiplier["o_proj_l2_norm"] = l2_norms
+                    group_multiplier["B"] = layer.weight 
 
 
             import os
@@ -434,6 +440,7 @@ class TaylorImportance(tp.importance.Importance):
                 )
                 group_imp = [merged_group_multiplier]  
             elif local_mode == "kqvo_proj":
+                # import pdb; pdb.set_trace()
                 k_importance = group_multiplier["k_proj"].reshape(-1, 128)
                 q_importance = group_multiplier["q_proj"].reshape(-1, 128)
                 importance_for_heads = torch.mul(q_importance, k_importance).sum(dim=1)
@@ -447,13 +454,34 @@ class TaylorImportance(tp.importance.Importance):
                     )
                 )
                 group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]  
+            elif local_mode == "2nd_moment":
+                A = group_multiplier["A"] # 4096 x 4096 value
+                B = group_multiplier["B"] # 4096 x 4096 o_att
+                C = group_multiplier["C"] # 4096 x 4096 query
+                D = group_multiplier["D"] # 4096 x 4096 key
+                layer_number = re.findall(r"layers\.(\d+)\.self_attn", group[0][0].target.name)[0]
+                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{layer_number}.pt") # 4096 x 4096 
+                C_var = torch.mul(torch.matmul(C, cov_matrix), C).sum(1)
+                D_var = torch.mul(torch.matmul(D, cov_matrix), D).sum(1)
+                C_var = C_var.view(-1, 128)
+                D_var = D_var.view(-1, 128)
+                head_related = torch.mul(C_var, D_var).sum(1)
+                head_related = head_related.unsqueeze(1).expand(-1, 128).reshape(-1)
+                # imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(head_related, torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1)))
+                imp = torch.mul(torch.norm(B, p=2, dim=0), torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
+                # import pdb; pdb.set_trace()
+                group_imp = [imp]
             else:
-                merged_group_multiplier = torch.matmul(
-                    group_multiplier["o_proj"], 
-                    group_multiplier["v_proj"]
+                k_importance = group_multiplier["k_proj"]
+                merged_group_multiplier = torch.mul(
+                    group_multiplier["o_proj_l2_norm"],
+                    torch.mul(
+                        k_importance,
+                        group_multiplier["v_proj_l2_norm"]
+                    )
                 )
-                group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)] 
-            # group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
+                group_imp = [merged_group_multiplier]
+            group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
         elif "mlp" in group[0][0].target.name:
             # mlp group
             # import pdb; pdb.set_trace()
@@ -476,13 +504,16 @@ class TaylorImportance(tp.importance.Importance):
                     group_multiplier["gate_proj"] = torch.nn.functional.silu(
                         torch.norm(layer.weight, p=2, dim=1)
                     )
+                    group_multiplier["A"] = layer.weight
                 elif "up_proj" in layer_name:
                     group_multiplier["up_proj"] = layer.weight
+                    group_multiplier["C"] = layer.weight
                 elif "down_proj" in layer_name:
                     l2_norms = torch.norm(layer.weight, p=2, dim=0)
                     diagonal_matrix = torch.diag(l2_norms) 
                     group_multiplier["down_proj"] = diagonal_matrix
                     group_multiplier["down_proj_l2_norm"] = l2_norms
+                    group_multiplier["B"] = layer.weight
 
             import os
             local_mode = os.environ.get('LOCAL_MODE')
@@ -496,6 +527,10 @@ class TaylorImportance(tp.importance.Importance):
                 group_imp = [group_multiplier["down_proj_l2_norm"]]
             elif local_mode == "gate":
                 group_imp = [group_multiplier["gate_proj"]]
+
+                # import pdb; pdb.set_trace()
+                # if "29" in layer_name:
+                #     import pdb; pdb.set_trace()
             elif local_mode == "gate_up":
                 merged_group_multiplier = torch.mul(
                     group_multiplier["gate_proj"].unsqueeze(1).repeat(1, group_multiplier["up_proj"].shape[1]), 
@@ -523,6 +558,24 @@ class TaylorImportance(tp.importance.Importance):
                     )
                 )
                 group_imp = [torch.norm(merged_group_multiplier, p=2, dim=1)]
+            elif local_mode == "2nd_moment":
+                A = group_multiplier["A"] # 11008 x 4096
+                B = group_multiplier["B"] # 4096 x 11008
+                C = group_multiplier["C"] # 11008 x 4096
+                layer_number = re.findall(r"layers\.(\d+)\.mlp", layer_name)[0]
+                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov/cov_matrix_{layer_number}.pt") # 4096 x 4096
+                # import pdb; pdb.set_trace()
+                # imp = torch.mul(torch.norm(B, p=2, dim=0),torch.mul(torch.nn.functional.silu(torch.mul(torch.matmul(A, cov_matrix), A).sum(1)), torch.mul(torch.matmul(C, cov_matrix), C).sum(1)))
+                imp = torch.mul(
+                    torch.norm(B, p=2, dim=0),
+                    torch.mul(
+                        torch.nn.functional.silu(
+                            torch.mul(torch.matmul(A, cov_matrix), A).sum(1)
+                        ), 
+                        torch.mul(torch.matmul(C, cov_matrix), C).sum(1)
+                    )
+                )
+                group_imp = [imp]
 
         if len(group_imp)==0:
             return None

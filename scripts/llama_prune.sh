@@ -2,7 +2,7 @@ prune_ckpt_path='/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune_l2'
 # tune_ckpt_path='/mnt/beegfs/jli265/output/llm_pruner/c30/llama_tune'
 
 echo "[START] - Start Pruning Model"
-CUDA_VISIBLE_DEVICES=0 LOCAL_MODE=gate SAMPLE_P=3 LOCAL_MODE_2=v_proj python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio 0.25 --device cuda --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type taylor --test_after_train --taylor param_first --save_model #--global_pruning 
+CUDA_VISIBLE_DEVICES=2 LOCAL_MODE=2nd_moment SAMPLE_P=3 DO_SAMPLE=true LOCAL_MODE_2=2nd_moment SAMPLE_P_2=1 python hf_prune.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio 0.25 --device cuda --eval_device cuda --block_wise --block_mlp_layer_start 4 --block_mlp_layer_end 30 --block_attention_layer_start 4 --block_attention_layer_end 30 --save_ckpt_log_name $prune_ckpt_path --pruner_type taylor --test_after_train --taylor param_first --save_model #--global_pruning 
 echo "[FINISH] - Finish Pruning Model"
 
 # echo "[START] - Start Tuning"
@@ -13,6 +13,4 @@ echo "[FINISH] - Finish Pruning Model"
 # echo "You can use the command:"
 # echo "       python generate.py --model_type tune_prune_LLM --ckpt $prune_ckpt_path/pytorch_model.bin --lora_ckpt $tune_ckpt_path"
 # echo "to use the pruned model"
-
-
 

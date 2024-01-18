@@ -1,0 +1,301 @@
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.322298876557472}
+{'wikitext2': 20.322298876557472, 'ptb': 32.159346537604755}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.203571081597193}
+{'wikitext2': 20.203571081597193, 'ptb': 31.598985005566618}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.68268496272443}
+{'wikitext2': 20.68268496272443, 'ptb': 32.79363281328884}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.4816886421048}
+{'wikitext2': 20.4816886421048, 'ptb': 32.53843073806492}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.36202965350754}
+{'wikitext2': 20.36202965350754, 'ptb': 32.159346537604755}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.967397891114594}
+{'wikitext2': 20.967397891114594, 'ptb': 34.16664924473404}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.24306974171993}
+{'wikitext2': 20.24306974171993, 'ptb': 31.9714638416083}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.203571081597193}
+{'wikitext2': 20.203571081597193, 'ptb': 31.846818916590372}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.124804822565828}
+{'wikitext2': 20.124804822565828, 'ptb': 32.66578255521719}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.2
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.2
+{'wikitext2': 20.322298876557472}
+{'wikitext2': 20.322298876557472, 'ptb': 32.159346537604755}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.2
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.668995768810042}
+{'wikitext2': 27.668995768810042, 'ptb': 44.04255166984753}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 26.975306541751994}
+{'wikitext2': 26.975306541751994, 'ptb': 42.52108200006278}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 28.325147094540903}
+{'wikitext2': 28.325147094540903, 'ptb': 44.5617113320772}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.940524471445343}
+{'wikitext2': 27.940524471445343, 'ptb': 44.12865633779556}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.240027749911206}
+{'wikitext2': 27.240027749911206, 'ptb': 42.77096031537661}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 28.771203256660744}
+{'wikitext2': 28.771203256660744, 'ptb': 46.60915005647103}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 28.1047190510635}
+{'wikitext2': 28.1047190510635, 'ptb': 46.066137010589394}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.507346790200362}
+{'wikitext2': 27.507346790200362, 'ptb': 44.387981683814154}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.83159468972004}
+{'wikitext2': 27.83159468972004, 'ptb': 46.066137010589394}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.3
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.3
+{'wikitext2': 27.668995768810042}
+{'wikitext2': 27.668995768810042, 'ptb': 44.04255166984753}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.3
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 38.19016894386643}
+{'wikitext2': 38.19016894386643, 'ptb': 63.582848099201826}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 38.19016894386643}
+{'wikitext2': 38.19016894386643, 'ptb': 63.83170433047907}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 40.65322322588273}
+{'wikitext2': 40.65322322588273, 'ptb': 67.41971617548266}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 39.94485987582193}
+{'wikitext2': 39.94485987582193, 'ptb': 66.11570082213345}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 41.53608219643496}
+{'wikitext2': 41.53608219643496, 'ptb': 64.08153455750669}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 40.65322322588273}
+{'wikitext2': 40.65322322588273, 'ptb': 68.21443845541918}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 40.33685733281881}
+{'wikitext2': 40.33685733281881, 'ptb': 66.11570082213345}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 40.17959882934157}
+{'wikitext2': 40.17959882934157, 'ptb': 65.60118435636834}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 39.7114923241556}
+{'wikitext2': 39.7114923241556, 'ptb': 64.33234259239626}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.4
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.4
+{'wikitext2': 38.19016894386643}
+{'wikitext2': 38.19016894386643, 'ptb': 63.582848099201826}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.4
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 82.28231911219243}
+{'wikitext2': 82.28231911219243, 'ptb': 141.0647140528757}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 81.00664999449546}
+{'wikitext2': 81.00664999449546, 'ptb': 133.0366960079705}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 84.2335880783952}
+{'wikitext2': 84.2335880783952, 'ptb': 137.25973406168575}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 84.89424029774196}
+{'wikitext2': 84.89424029774196, 'ptb': 138.33627549846275}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 95.0770390179677}
+{'wikitext2': 95.0770390179677, 'ptb': 157.98498549518746}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 81.32370105824417}
+{'wikitext2': 81.32370105824417, 'ptb': 132.51803508331912}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 86.56862915519338}
+{'wikitext2': 86.56862915519338, 'ptb': 144.4099673433467}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 83.25223705241488}
+{'wikitext2': 83.25223705241488, 'ptb': 141.0647140528757}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 88.27604237373367}
+{'wikitext2': 88.27604237373367, 'ptb': 146.11222634120347}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.5
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.5
+{'wikitext2': 82.28231911219243}
+{'wikitext2': 82.28231911219243, 'ptb': 141.0647140528757}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.5
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 151.3403463773431}
+{'wikitext2': 151.3403463773431, 'ptb': 357.4181017943673}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 147.834551029463}
+{'wikitext2': 147.834551029463, 'ptb': 331.8514735526883}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 157.98498549518746}
+{'wikitext2': 157.98498549518746, 'ptb': 291.71615278815983}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 154.92927926604594}
+{'wikitext2': 154.92927926604594, 'ptb': 283.84760726337464}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 156.7555365841094}
+{'wikitext2': 156.7555365841094, 'ptb': 378.98627852215554}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 171.49107938408403}
+{'wikitext2': 171.49107938408403, 'ptb': 314.1906602856942}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 159.8472625113303}
+{'wikitext2': 159.8472625113303, 'ptb': 386.4611130887752}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 161.10096012939127}
+{'wikitext2': 161.10096012939127, 'ptb': 387.9736791189793}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 160.47288700783744}
+{'wikitext2': 160.47288700783744, 'ptb': 380.4695888770434}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.6
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.6
+{'wikitext2': 151.3403463773431}
+{'wikitext2': 151.3403463773431, 'ptb': 357.4181017943673}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.6
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 351.87684773779097}
+{'wikitext2': 351.87684773779097, 'ptb': 1079.6314371748051}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.7
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 303.3368032308679}
+{'wikitext2': 303.3368032308679, 'ptb': 912.6990968629584}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 349.1385203839046}
+{'wikitext2': 349.1385203839046, 'ptb': 1167.3599206126853}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 780.6729077394361}
+{'wikitext2': 780.6729077394361, 'ptb': 1786.9780822945145}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.7
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 405.0077691463688}
+{'wikitext2': 405.0077691463688, 'ptb': 1327.9693500653907}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 446.5549673918236}
+{'wikitext2': 446.5549673918236, 'ptb': 1391.6999298224052}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.7
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.7
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.7
+{'wikitext2': 351.87684773779097}
+{'wikitext2': 351.87684773779097, 'ptb': 1079.6314371748051}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.7
+
+
+
+
+
+
+[START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1348.881824402271}
+{'wikitext2': 1348.881824402271, 'ptb': 6876.998010347775}
+[FINISH] - Finish Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1469.928074993662}
+{'wikitext2': 1469.928074993662, 'ptb': 7320.526276004351}
+[FINISH] - Finish Pruning Model with Local Mode: q_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1354.1611985934896}
+{'wikitext2': 1354.1611985934896, 'ptb': 6823.480787247066}
+[FINISH] - Finish Pruning Model with Local Mode: v_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1354.1611985934896}
+{'wikitext2': 1354.1611985934896, 'ptb': 6876.998010347775}
+[FINISH] - Finish Pruning Model with Local Mode: o_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1302.284097746097}
+{'wikitext2': 1302.284097746097, 'ptb': 5272.7772756597515}
+[FINISH] - Finish Pruning Model with Local Mode: kq_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1322.7920882144774}
+{'wikitext2': 1322.7920882144774, 'ptb': 5440.1531933730275}
+[FINISH] - Finish Pruning Model with Local Mode: vo_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1223.3826929169447}
+{'wikitext2': 1223.3826929169447, 'ptb': 5070.780350360642}
+[FINISH] - Finish Pruning Model with Local Mode: kqv_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1252.3943774226225}
+{'wikitext2': 1252.3943774226225, 'ptb': 4992.165187767088}
+[FINISH] - Finish Pruning Model with Local Mode: kqo_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1223.3826929169447}
+{'wikitext2': 1223.3826929169447, 'ptb': 6410.066985396673}
+[FINISH] - Finish Pruning Model with Local Mode: kqvo_proj_p_1 and Pruning Ratio: 0.8
+[START] - Start Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.8
+{'wikitext2': 1348.881824402271}
+{'wikitext2': 1348.881824402271, 'ptb': 6876.998010347775}
+[FINISH] - Finish Pruning Model with Local Mode: test_p_1 and Pruning Ratio: 0.8
