@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import typing
 
+
 from .scheduler import linear_scheduler
 from ..import function
 from ... import ops, dependency
@@ -221,8 +222,9 @@ class MetaPruner:
             if interactive:
                 return self.prune_local()
             else:
-                for group in self.prune_local():
-                    group.prune()
+                # for group in self.prune_local():
+                #     group.prune()
+                self.prune_local()
 
     def estimate_importance(self, group, ch_groups=1, consecutive_groups=1):
         # import pdb; pdb.set_trace()
@@ -283,6 +285,14 @@ class MetaPruner:
                 ch_groups = self.get_channel_groups(group)
                 consecutive_groups = self.get_consecutive_groups(group)
                 imp = self.estimate_importance(group, ch_groups=ch_groups, consecutive_groups=consecutive_groups)
+                if isinstance(imp, list):
+                    if len(imp) == 2:
+                        imp_kq = imp[1]
+                        imp_ov = imp[0]
+                        imp = imp_ov
+                    else:
+                        imp = imp[0]
+
                 if imp is None: continue
                 current_channels = self.DG.get_out_channels(module)
                 # import pdb;pdb.set_trace()
@@ -306,9 +316,17 @@ class MetaPruner:
                     max_val = imp.max()
                     scaled_imp = imp / max_val
                     # log_scaled_imp = torch.log(imp / max_val)
-                    imp = scaled_imp.view(-1, consecutive_groups).sum(1)
+                    # imp = scaled_imp.view(-1, consecutive_groups).sum(1)
+                    # imp_argsort = torch.argsort(imp)
+                    imp = scaled_imp.view(-1, consecutive_groups)
+                    imp_argsort = torch.argsort(imp, dim=1)
 
-                imp_argsort = torch.argsort(imp)
+                    max_val_kq = imp_kq.max()
+                    scaled_imp_kq = imp_kq / max_val_kq
+                    imp_kq = scaled_imp_kq.view(-1, consecutive_groups)
+                    imp_kq_argsort = torch.argsort(imp_kq, dim=1)
+                else:
+                    imp_argsort = torch.argsort(imp)
                 
                 # import pdb; pdb.set_trace()
                 import os
@@ -354,23 +372,62 @@ class MetaPruner:
                         pruning_idxs = sample_from_vector_exclude_indices(imp, p=sample_p, exclude_num_samples=n_pruned, key=group[0][0].target.name)
                 else:
                     if ch_groups > 1:
-                        pruning_idxs = imp_argsort[:(n_pruned//ch_groups)]
+                        pruning_idxs = imp_argsort[:(n_pruned//())]
                         group_size = current_channels//ch_groups
                         pruning_idxs = torch.cat(
                             [pruning_idxs+group_size*i for i in range(ch_groups)], 0)
                     elif consecutive_groups > 1:
-                        pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
-                        group_size = consecutive_groups
-                        pruning_idxs = torch.cat(
-                            [torch.tensor([j+group_size*i for j in range(group_size)])
-                            for i in pruning_groups], 0)
+                        # pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
+                        # group_size = consecutive_groups
+                        # pruning_idxs = torch.cat(
+                        #     [torch.tensor([j+group_size*i for j in range(group_size)])
+                        #     for i in pruning_groups], 0)
+
+                        # import pdb; pdb.set_trace()
+                        pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
+                        pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
+                        pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).cuda()
+                        pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
+                        pruning_idxs = pruning_idxs.view(-1)
+
+                        pruning_idxs_kq = imp_kq_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
+                        pruning_idxs_kq_base = torch.arange(pruning_idxs_kq.size(0)).view(-1, 1)
+                        pruning_idxs_kq_base = pruning_idxs_kq_base.expand_as(pruning_idxs_kq).cuda()
+                        pruning_idxs_kq = pruning_idxs_kq_base * consecutive_groups + pruning_idxs_kq
+                        pruning_idxs_kq = pruning_idxs_kq.view(-1)
                     else:
                         pruning_idxs = imp_argsort[:n_pruned]
 
-                group = self.DG.get_pruning_group(
-                    module, pruning_fn, pruning_idxs.tolist())
-                if self.DG.check_pruning_group(group):
-                    yield group
+                if "attn" in group[0][0].target.name:
+                    for dep, idx in group:
+                        layer = dep.target.module
+                        prune_fn = dep.handler
+                        layer_name = dep.target.name
+
+                        if prune_fn not in [
+                            function.prune_linear_out_channels, function.prune_linear_in_channels, 
+                            # hf_rmsnorm_pruner.prune_out_channels, tp.prune_embedding_out_channels, hf_attention_pruner.prune_out_channels,
+                            # hf_linear_pruner.prune_out_channels, hf_linear_pruner.prune_in_channels
+                        ]:
+                            continue
+
+                        # dep(idx=pruning_idxs.tolist())
+                        # import pdb; pdb.set_trace()
+                        if "q_proj" in layer_name:
+                            dep(idxs=pruning_idxs_kq.tolist())
+                            # dep(idxs=pruning_idxs.tolist())
+                        elif "k_proj" in layer_name:
+                            dep(idxs=pruning_idxs_kq.tolist())
+                            # dep(idxs=pruning_idxs.tolist())
+                        elif "v_proj" in layer_name:
+                            dep(idxs=pruning_idxs.tolist())
+                        elif "o_proj" in layer_name:
+                            dep(idxs=pruning_idxs.tolist())
+                else:
+                    group = self.DG.get_pruning_group(
+                        module, pruning_fn, pruning_idxs.tolist())
+                    if self.DG.check_pruning_group(group):
+                        group.prune()
 
     def prune_global(self):
 

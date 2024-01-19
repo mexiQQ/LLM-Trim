@@ -462,8 +462,8 @@ class DependencyGraph(object):
             Dependency(pruning_fn, pruning_fn,
                        source=root_node, target=root_node), idxs
         )
-        visited_node = set()
 
+        visited_node = set()
         def _fix_dependency_graph_non_recursive(dep, idxs):
             processing_stack = [(dep, idxs)]
             while len(processing_stack) > 0:
@@ -486,6 +486,7 @@ class DependencyGraph(object):
                         ):
                             continue
                         else:
+                            # import pdb; pdb.set_trace()
                             group.add_dep(new_dep, new_indices)
                             processing_stack.append(
                                 (new_dep, new_indices)

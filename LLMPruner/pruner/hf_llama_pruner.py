@@ -465,12 +465,11 @@ class TaylorImportance(tp.importance.Importance):
                 D_var = torch.mul(torch.matmul(D, cov_matrix), D).sum(1)
                 C_var = C_var.view(-1, 128)
                 D_var = D_var.view(-1, 128)
-                head_related = torch.mul(C_var, D_var).sum(1)
-                head_related = head_related.unsqueeze(1).expand(-1, 128).reshape(-1)
                 # imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(head_related, torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1)))
                 imp = torch.mul(torch.norm(B, p=2, dim=0), torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
                 # import pdb; pdb.set_trace()
-                group_imp = [imp]
+                imp2 = torch.mul(C_var, D_var).view(-1) 
+                group_imp = [imp, imp2]
             else:
                 k_importance = group_multiplier["k_proj"]
                 merged_group_multiplier = torch.mul(
@@ -481,7 +480,7 @@ class TaylorImportance(tp.importance.Importance):
                     )
                 )
                 group_imp = [merged_group_multiplier]
-            group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
+            # group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
         elif "mlp" in group[0][0].target.name:
             # mlp group
             # import pdb; pdb.set_trace()
@@ -580,16 +579,16 @@ class TaylorImportance(tp.importance.Importance):
         if len(group_imp)==0:
             return None
 
-        min_imp_size = min([len(imp) for imp in group_imp])
-        aligned_group_imp = []
-        for imp in group_imp:
-            if len(imp)>min_imp_size and len(imp)%min_imp_size==0:
-                imp = imp.view(len(imp) // min_imp_size, min_imp_size).sum(0)
-                aligned_group_imp.append(imp)
-            elif len(imp)==min_imp_size:
-                aligned_group_imp.append(imp)
-        group_imp = torch.stack(aligned_group_imp, dim=0)
-        group_imp = self._reduce(group_imp)
-        if self.normalizer is not None:
-            group_imp = self.normalizer(group, group_imp)
+        # min_imp_size = min([len(imp) for imp in group_imp])
+        # aligned_group_imp = []
+        # for imp in group_imp:
+        #     if len(imp)>min_imp_size and len(imp)%min_imp_size==0:
+        #         imp = imp.view(len(imp) // min_imp_size, min_imp_size).sum(0)
+        #         aligned_group_imp.append(imp)
+        #     elif len(imp)==min_imp_size:
+        #         aligned_group_imp.append(imp)
+        # group_imp = torch.stack(aligned_group_imp, dim=0)
+        # group_imp = self._reduce(group_imp)
+        # if self.normalizer is not None:
+        #     group_imp = self.normalizer(group, group_imp)
         return group_imp

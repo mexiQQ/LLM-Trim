@@ -122,16 +122,16 @@ def main(args):
         logger.log("Pruning Attention Layer = {}".format(list(range(args.block_attention_layer_start, args.block_attention_layer_end))))
         logger.log("Pruning MLP Layer = {}".format(list(range(args.block_mlp_layer_start, args.block_mlp_layer_end))))
 
-        ch_sparsity_dict = {}
-        for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-            ch_sparsity_dict[module] = 0.1
-        for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-            ch_sparsity_dict[module] = 0.3 
+        # ch_sparsity_dict = {}
+        # for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+        #     ch_sparsity_dict[module] = 0.1
+        # for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+        #     ch_sparsity_dict[module] = 0.3 
 
         pruner = tp.pruner.MetaPruner(
             model,
             forward_prompts,
-            ch_sparsity_dict=ch_sparsity_dict,
+            # ch_sparsity_dict=ch_sparsity_dict,
             **kwargs
         )
         model.zero_grad()
@@ -169,7 +169,13 @@ def main(args):
         
             # modify inferece-related attributes
             for layer in model.model.layers:
-                layer.self_attn.num_heads = layer.self_attn.q_proj.weight.data.shape[0] // layer.self_attn.head_dim
+                # layer.self_attn.q_num_heads = layer.self_attn.q_proj.weight.data.shape[0] // layer.self_attn.q_head_dim
+                # layer.self_attn.k_num_heads = layer.self_attn.k_proj.weight.data.shape[0] // layer.self_attn.k_head_dim
+                # layer.self_attn.v_num_heads = layer.self_attn.v_proj.weight.data.shape[0] // layer.self_attn.v_head_dim
+
+                layer.self_attn.q_head_dim = layer.self_attn.q_proj.weight.data.shape[0] // layer.self_attn.q_num_heads
+                layer.self_attn.k_head_dim = layer.self_attn.k_proj.weight.data.shape[0] // layer.self_attn.k_num_heads
+                layer.self_attn.v_head_dim = layer.self_attn.v_proj.weight.data.shape[0] // layer.self_attn.v_num_heads
 
         # Clean the gradient in the model
         model.zero_grad()
@@ -279,6 +285,8 @@ def main(args):
         
     #     logger.log("\n==================Finish================\n")
     
+    import os
+    os.environ["debug"] = "1"
     ppl = PPLMetric(model, tokenizer, [
         'wikitext2', 
         'ptb'
