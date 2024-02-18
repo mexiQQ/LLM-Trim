@@ -1,11 +1,35 @@
 import torch
 import torch.nn as nn
 import typing
-
+import re
+from scipy import linalg
 
 from .scheduler import linear_scheduler
 from ..import function
 from ... import ops, dependency
+
+def invert(H: torch.Tensor, ridge_regular=1e-4):
+    try:
+        H = H.float()
+        ridge = ridge_regular * torch.mean(torch.diag(H)) * torch.eye(H.shape[0], device=H.device)
+        H.add_(ridge)
+        del ridge
+        Hinv = torch.cholesky_inverse(torch.linalg.cholesky(H))
+    except RuntimeError:
+        return invert(H=H, ridge_regular=ridge_regular * 10)
+    return Hinv
+
+def invert_batch(H_batch: torch.Tensor, ridge_regular=1e-4):
+    try:
+        ridge = ridge_regular * torch.mean(torch.diagonal(H_batch, dim1=-2, dim2=-1), dim=-1)
+        ridge = ridge.unsqueeze(-1).unsqueeze(-1) * torch.eye(H_batch.shape[-1], device=H_batch.device).expand_as(H_batch)
+        
+        H_batch_ridge = H_batch + ridge
+
+        Hinv_batch = torch.cholesky_inverse(torch.linalg.cholesky(H_batch_ridge))
+    except RuntimeError:
+        return invert_batch(H_batch, ridge_regular=ridge_regular * 10)
+    return Hinv_batch
 
 def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1, key=""):
     # L1 norm is the absolute values
@@ -13,24 +37,29 @@ def sample_from_vector_exclude_indices(vector, p=1, exclude_num_samples=1, key="
 
     # Normalize the weights to create a probability distribution
     probabilities = (weights / weights.sum()).cuda()
-    # probabilities = probabilities ** p
+    # probabilities = probabilities ** 2 
 
     if "attn" in key:
-        noise_level = 0.9  # Vary this between 0 (no noise) and 1 (full noise)
-        num_choices = vector.shape[0] * 128
-        uniform_probabilities = torch.rand(num_choices).view(-1,128).sum(1).cuda()
-        uniform_probabilities = uniform_probabilities / uniform_probabilities.max()
-        # import pdb; pdb.set_trace()
-        blended_probabilities = (1 - noise_level) * probabilities + noise_level * uniform_probabilities
-        imp_argsort = torch.argsort(blended_probabilities)
-        non_sampled_indices = imp_argsort[:exclude_num_samples]
-    else:
+        # noise_level = 0.9  # Vary this between 0 (no noise) and 1 (full noise)
+        # num_choices = vector.shape[0] * 128
+        # uniform_probabilities = torch.rand(num_choices).view(-1,128).sum(1).cuda()
+        # uniform_probabilities = uniform_probabilities / uniform_probabilities.max()
+        # # import pdb; pdb.set_trace()
+        # blended_probabilities = (1 - noise_level) * probabilities + noise_level * uniform_probabilities
+        # imp_argsort = torch.argsort(blended_probabilities)
+        # non_sampled_indices = imp_argsort[:exclude_num_samples]
+
         noise_level = 0  # Vary this between 0 (no noise) and 1 (full noise)
         num_choices = vector.shape[0] * 128
         uniform_probabilities = torch.rand(num_choices).view(-1,128).sum(1).cuda()
         blended_probabilities = (1 - noise_level) * probabilities + noise_level * uniform_probabilities
-        # Step 4: Sample using the blended distribution
         sampled_indices = torch.multinomial(blended_probabilities, len(vector) - exclude_num_samples, replacement=False)
+        mask = torch.ones(len(vector), dtype=torch.bool)
+        mask[sampled_indices] = False
+        non_sampled_indices = torch.arange(len(vector))[mask]
+    else:
+        # Step 1: Sample using the blended distribution
+        sampled_indices = torch.multinomial(probabilities, len(vector) - exclude_num_samples, replacement=False)
 
         # Create a mask for all indices
         mask = torch.ones(len(vector), dtype=torch.bool)
@@ -284,6 +313,7 @@ class MetaPruner:
 
                 ch_groups = self.get_channel_groups(group)
                 consecutive_groups = self.get_consecutive_groups(group)
+                # import pdb; pdb.set_trace()
                 imp = self.estimate_importance(group, ch_groups=ch_groups, consecutive_groups=consecutive_groups)
                 if isinstance(imp, list):
                     if len(imp) == 2:
@@ -312,19 +342,24 @@ class MetaPruner:
                 if ch_groups > 1:
                     imp = imp[:len(imp)//ch_groups]
 
-                if consecutive_groups > 1:
-                    max_val = imp.max()
-                    scaled_imp = imp / max_val
-                    # log_scaled_imp = torch.log(imp / max_val)
-                    # imp = scaled_imp.view(-1, consecutive_groups).sum(1)
-                    # imp_argsort = torch.argsort(imp)
-                    imp = scaled_imp.view(-1, consecutive_groups)
-                    imp_argsort = torch.argsort(imp, dim=1)
+                random = False 
+                kq_mode = 4 
 
-                    max_val_kq = imp_kq.max()
-                    scaled_imp_kq = imp_kq / max_val_kq
-                    imp_kq = scaled_imp_kq.view(-1, consecutive_groups)
-                    imp_kq_argsort = torch.argsort(imp_kq, dim=1)
+                if consecutive_groups > 1:
+                    max_val = imp.max() 
+                    scaled_imp = imp / max_val
+                    log_scaled_imp = torch.log(imp / max_val)
+                    if random:
+                        imp = scaled_imp.view(-1, consecutive_groups).sum(1)
+                        imp_argsort = torch.argsort(imp)
+                    else:
+                        imp = scaled_imp.view(-1, consecutive_groups)
+                        imp_argsort = torch.argsort(imp, dim=1)
+
+                        max_val_kq = imp_kq.max()
+                        scaled_imp_kq = imp_kq / max_val_kq
+                        imp_kq = scaled_imp_kq.view(-1, consecutive_groups)
+                        imp_kq_argsort = torch.argsort(imp_kq, dim=1)
                 else:
                     imp_argsort = torch.argsort(imp)
                 
@@ -377,28 +412,151 @@ class MetaPruner:
                         pruning_idxs = torch.cat(
                             [pruning_idxs+group_size*i for i in range(ch_groups)], 0)
                     elif consecutive_groups > 1:
-                        # pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
-                        # group_size = consecutive_groups
-                        # pruning_idxs = torch.cat(
-                        #     [torch.tensor([j+group_size*i for j in range(group_size)])
-                        #     for i in pruning_groups], 0)
-
                         # import pdb; pdb.set_trace()
-                        pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                        pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                        pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).cuda()
-                        pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                        pruning_idxs = pruning_idxs.view(-1)
+                        if random:
+                            pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
+                            group_size = consecutive_groups
+                            pruning_idxs = torch.cat(
+                                [torch.tensor([j+group_size*i for j in range(group_size)])
+                                for i in pruning_groups], 0)
+                        else:
+                            # import pdb; pdb.set_trace()
+                            pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
+                            pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
+                            pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).cuda()
+                            pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
+                            pruning_idxs = pruning_idxs.view(-1)
 
-                        pruning_idxs_kq = imp_kq_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                        pruning_idxs_kq_base = torch.arange(pruning_idxs_kq.size(0)).view(-1, 1)
-                        pruning_idxs_kq_base = pruning_idxs_kq_base.expand_as(pruning_idxs_kq).cuda()
-                        pruning_idxs_kq = pruning_idxs_kq_base * consecutive_groups + pruning_idxs_kq
-                        pruning_idxs_kq = pruning_idxs_kq.view(-1)
+                            pruning_idxs_kq = imp_kq_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
+                            pruning_idxs_kq_base = torch.arange(pruning_idxs_kq.size(0)).view(-1, 1)
+                            pruning_idxs_kq_base = pruning_idxs_kq_base.expand_as(pruning_idxs_kq).cuda()
+                            pruning_idxs_kq = pruning_idxs_kq_base * consecutive_groups + pruning_idxs_kq
+                            pruning_idxs_kq = pruning_idxs_kq.view(-1)
                     else:
                         pruning_idxs = imp_argsort[:n_pruned]
 
                 if "attn" in group[0][0].target.name:
+
+                    if not random: 
+                        for dep, idx in group:
+                            layer = dep.target.module
+                            prune_fn = dep.handler
+                            layer_name = dep.target.name
+
+                            if prune_fn not in [
+                                function.prune_linear_out_channels, function.prune_linear_in_channels, 
+                                # hf_rmsnorm_pruner.prune_out_channels, tp.prune_embedding_out_channels, hf_attention_pruner.prune_out_channels,
+                                # hf_linear_pruner.prune_out_channels, hf_linear_pruner.prune_in_channels
+                            ]:
+                                continue
+
+                            # dep(idx=pruning_idxs.tolist())
+                            # import pdb; pdb.set_trace()
+                            if "q_proj" in layer_name:
+                                q_weight = layer.weight.view(12, 64, 768)
+                            elif "k_proj" in layer_name:
+                                k_weight = layer.weight.view(12, 64, 768)
+
+                        if kq_mode == 1:
+                            layer_number = re.findall(r"h\.(\d+)\.attn", group[0][0].target.name)[0]
+                            print(f"Pruning Layer Number:{layer_number}....")
+                            k_list = []
+                            q_list = []
+                            K = (current_channels - n_pruned) // 12
+                            for i in range(12):
+                                kq = torch.matmul(k_weight[i].T, q_weight[i]).float()
+                                U, S, V = torch.linalg.svd(kq)
+                                new_k = (U[:, :K] @ torch.diag(S[:K])).T
+                                new_q = (V[:, :K]).T
+                                k_list.append(new_k)
+                                q_list.append(new_q)
+                            new_k = torch.stack(k_list).view(-1, 768)
+                            new_q = torch.stack(q_list).view(-1, 768)
+                            print("new_k shape:", new_k.shape)
+                            print("new_q shape:", new_q.shape)
+                        elif kq_mode == 2:
+                            k_list = []
+                            q_list = []
+                            K = (current_channels - n_pruned) // 12
+                            layer_number = re.findall(r"h\.(\d+)\.attn", group[0][0].target.name)[0]
+                            print(f"Pruning Layer Number:{layer_number}....")
+                            cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/gpt_cov_attn/cov_matrix_{layer_number}.pt") # 4096 x 4096 
+                            for i in range(12):
+                                kq = torch.matmul(torch.matmul(k_weight[i].T, q_weight[i]), cov_matrix).float()
+                                U, S, V = torch.linalg.svd(kq)
+                                new_k = (U[:, :K] @ torch.diag(S[:K])).T
+                                new_q = (V[:, :K]).T @ invert(cov_matrix)
+                                k_list.append(new_k)
+                                q_list.append(new_q)
+                            new_k = torch.stack(k_list).view(-1, 768)
+                            new_q = torch.stack(q_list).view(-1, 768)
+                            print("new_k shape:", new_k.shape)
+                            print("new_q shape:", new_q.shape)
+                        elif kq_mode == 3:
+                            k_list = []
+                            q_list = []
+                            K = (current_channels - n_pruned) // 12
+                            layer_number = re.findall(r"h\.(\d+)\.attn", group[0][0].target.name)[0]
+                            print(f"Pruning Layer Number:{layer_number}....")
+                            cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/gpt_cov_attn/cov_matrix_{layer_number}.pt") # 4096 x 4096 
+                            for i in range(12):
+                                A = torch.matmul(torch.matmul(q_weight[i], cov_matrix), k_weight[i].T).float()
+                                A = A.detach().cpu().numpy()
+                                Q, R, P = linalg.qr(A, mode="economic", pivoting=True)
+                                new_k = k_weight[i][P[:K], :]
+                                new_q = q_weight[i][P[:K], :]
+                                k_list.append(new_k)
+                                q_list.append(new_q)
+                            new_k = torch.stack(k_list).view(-1, 768)
+                            new_q = torch.stack(q_list).view(-1, 768)
+                            print("new_k shape:", new_k.shape)
+                            print("new_q shape:", new_q.shape)
+                        elif kq_mode == 4:
+                            # import pdb; pdb.set_trace()
+
+                            layer_number = re.findall(r"h\.(\d+)\.attn", group[0][0].target.name)[0]
+                            print(f"Pruning Layer Number:{layer_number}....")
+                            K = (current_channels - n_pruned) // 12
+                            # query_states, key_states.transpose(2, 3)
+                            kq_batch = torch.matmul(k_weight.transpose(-2, -1), q_weight).float()
+                            U, S, V = torch.linalg.svd(kq_batch)
+
+                            new_k_batch = U[..., :K] @ torch.diag_embed(S[..., :K])
+                            new_q_batch = V[:, :K, :]
+
+                            new_k = new_k_batch.transpose(-2, -1).reshape(-1, 768)
+                            new_q = new_q_batch.reshape(-1, 768)
+                            print("new_k shape:", new_k.shape)
+                            print("new_q shape:", new_q.shape)
+                        elif kq_mode == 5:
+                            K = (current_channels - n_pruned) // 12
+                            layer_number = re.findall(r"h\.(\d+)\.attn", group[0][0].target.name)[0]
+                            print(f"Pruning Layer Number:{layer_number}....SVD")
+                            cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/gpt_cov_attn/cov_matrix_{layer_number}.pt") # 4096 x 4096 
+
+                            kq_batch = torch.matmul(torch.matmul(k_weight.transpose(-2, -1), q_weight), cov_matrix).float()
+                            U, S, V = torch.linalg.svd(kq_batch)
+
+                            print(f"Pruning Layer Number:{layer_number}....Inverse")
+                            # cov_matrix_inv = invert(cov_matrix)
+                            # cov_matrix_inv = torch.inverse(cov_matrix.float())
+                            U_, S_, V_h = torch.svd(cov_matrix.float())
+                            threshold = 0.00001
+                            S_inv = torch.where(S_ > threshold, 1.0 / S_, torch.zeros_like(S_))
+                            S_inv_diag = torch.diag(S_inv)
+                            # S_inv_diag = torch.diag(1/S_)
+                            cov_matrix_inv = V_h @ S_inv_diag @ U_.t()
+                            # import pdb; pdb.set_trace()
+
+                            new_k_batch = (U[..., :K] @ torch.diag_embed(S[..., :K])).transpose(-2, -1)
+                            new_q_batch = V[:, :K, :] @ cov_matrix_inv
+
+                            new_k = new_k_batch.reshape(-1, 768)
+                            new_q = new_q_batch.reshape(-1, 768)
+
+                            print("new_k shape:", new_k.shape)
+                            print("new_q shape:", new_q.shape)
+
                     for dep, idx in group:
                         layer = dep.target.module
                         prune_fn = dep.handler
@@ -414,14 +572,25 @@ class MetaPruner:
                         # dep(idx=pruning_idxs.tolist())
                         # import pdb; pdb.set_trace()
                         if "q_proj" in layer_name:
-                            dep(idxs=pruning_idxs_kq.tolist())
-                            # dep(idxs=pruning_idxs.tolist())
+                            pass
+                            # import pdb; pdb.set_trace()
+                            if not random:
+                                dep(idxs=pruning_idxs_kq.tolist())
+                                layer.weight = torch.nn.Parameter(new_q)
+                            else:
+                                dep(idxs=pruning_idxs.tolist())
                         elif "k_proj" in layer_name:
-                            dep(idxs=pruning_idxs_kq.tolist())
-                            # dep(idxs=pruning_idxs.tolist())
+                            pass
+                            if not random:
+                                dep(idxs=pruning_idxs_kq.tolist())
+                                layer.weight = torch.nn.Parameter(new_k)
+                            else:
+                                dep(idxs=pruning_idxs.tolist())
                         elif "v_proj" in layer_name:
+                            pass
                             dep(idxs=pruning_idxs.tolist())
                         elif "o_proj" in layer_name:
+                            pass
                             dep(idxs=pruning_idxs.tolist())
                 else:
                     group = self.DG.get_pruning_group(

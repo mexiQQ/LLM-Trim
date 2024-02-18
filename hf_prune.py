@@ -10,8 +10,10 @@ from typing import Tuple
 
 import torch
 import numpy as np
-from transformers import LlamaTokenizer, GenerationConfig, LlamaConfig
+from transformers import LlamaTokenizer, GenerationConfig, LlamaConfig, GPT2Tokenizer, GPT2Config
 from LLMPruner.models.hf_llama.modeling_llama import LlamaForCausalLM, LlamaRMSNorm, LlamaAttention, LlamaMLP
+from LLMPruner.models.hf_bert.modeling_bert import BertForSequenceClassification
+from LLMPruner.models.hf_gpt2.modeling_gpt2 import GPT2LMHeadModel
 
 import LLMPruner.torch_pruning as tp 
 from LLMPruner.pruner import hf_llama_pruner as llama_pruner
@@ -41,6 +43,24 @@ def main(args):
         args.base_model,
         low_cpu_mem_usage=True if args.torch_version >=1.9 else False
     )
+
+    # model2 = BertForSequenceClassification.from_pretrained(
+    #     "textattack/bert-base-uncased-SST-2", 
+    #     low_cpu_mem_usage=True if args.torch_version >=1.9 else False
+    # )
+    # tokenizer2 = GPT2Tokenizer.from_pretrained("openai-community/gpt2")
+    # model2 = GPT2LMHeadModel.from_pretrained(
+    #     "openai-community/gpt2", 
+    #     low_cpu_mem_usage=True if args.torch_version >=1.9 else False
+    # )
+    # model2.to(args.device)
+    # ppl = PPLMetric(model2, tokenizer2, [
+    #     'wikitext2', 
+    #     # 'ptb'
+    # ], 1024, batch_size= 16, device=args.eval_device)
+
+    # import pdb;pdb.set_trace()
+
     if args.device != "cpu":
         model.half()
     model.to(args.device)
@@ -91,6 +111,8 @@ def main(args):
         raise NotImplementedError
 
     # import pdb; pdb.set_trace()
+    # import os
+    # os.environ["debug"] = "1"
     # ppl = PPLMetric(model, tokenizer, [
     #     'wikitext2', 
     #     # 'ptb'
@@ -104,7 +126,7 @@ def main(args):
             "importance": imp,
             "global_pruning": args.global_pruning,
             "iterative_steps": args.iterative_steps,
-            "ch_sparsity": args.pruning_ratio, 
+            # "ch_sparsity": args.pruning_ratio, 
             "ignored_layers":[],
             "channel_groups": {},
             "consecutive_groups": {
@@ -122,16 +144,16 @@ def main(args):
         logger.log("Pruning Attention Layer = {}".format(list(range(args.block_attention_layer_start, args.block_attention_layer_end))))
         logger.log("Pruning MLP Layer = {}".format(list(range(args.block_mlp_layer_start, args.block_mlp_layer_end))))
 
-        # ch_sparsity_dict = {}
-        # for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-        #     ch_sparsity_dict[module] = 0.1
-        # for module in [model.model.layers[i].self_attn.k_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
-        #     ch_sparsity_dict[module] = 0.3 
+        ch_sparsity_dict = {}
+        for module in [model.model.layers[i].self_attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
+            ch_sparsity_dict[module] = 0.25
+        for module in [model.model.layers[i].mlp.gate_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]:
+            ch_sparsity_dict[module] = 0.25
 
         pruner = tp.pruner.MetaPruner(
             model,
             forward_prompts,
-            # ch_sparsity_dict=ch_sparsity_dict,
+            ch_sparsity_dict=ch_sparsity_dict,
             **kwargs
         )
         model.zero_grad()
@@ -176,6 +198,8 @@ def main(args):
                 layer.self_attn.q_head_dim = layer.self_attn.q_proj.weight.data.shape[0] // layer.self_attn.q_num_heads
                 layer.self_attn.k_head_dim = layer.self_attn.k_proj.weight.data.shape[0] // layer.self_attn.k_num_heads
                 layer.self_attn.v_head_dim = layer.self_attn.v_proj.weight.data.shape[0] // layer.self_attn.v_num_heads
+
+                layer.self_attn.rotary_emb.update_dim(layer.self_attn.q_head_dim)
 
         # Clean the gradient in the model
         model.zero_grad()

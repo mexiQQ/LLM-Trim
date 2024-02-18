@@ -2,7 +2,7 @@ prune_ckpt_path='/mnt/beegfs/jli265/output/llm_pruner/c31/llama_prune_l2'
 
 # Define the array of local modes
 
-local_modes=("k_proj" "q_proj" "v_proj" "o_proj" "kq_proj" "vo_proj" "kqv_proj" "kqo_proj" "kqvo_proj" "test")  # Add or modify modes as needed
+local_modes=("k_proj" "q_proj" "v_proj" "o_proj" "kq_proj" "vo_proj" "kqv_proj" "kqo_proj" "kqvo_proj" "2nd_moment")  # Add or modify modes as needed
 
 # Define the array of pruning ratios
 pruning_ratios=(0.2 0.3 0.4 0.5 0.6 0.7 0.8) # Add or modify ratios as needed

@@ -506,6 +506,7 @@ class DependencyGraph(object):
         # import pdb; pdb.set_trace()
         visited_layers = []
         ignored_layers = ignored_layers+self.IGNORED_LAYERS
+        groups = []
         for m in list(self.module2node.keys()):
             if m in ignored_layers:
                 continue
@@ -543,7 +544,10 @@ class DependencyGraph(object):
                     if module in ignored_layers:
                         prunable_group = False
             if prunable_group:
-                yield group
+                # yield group
+                groups.append(group)
+        # import pdb; pdb.set_trace()
+        return groups
 
     def get_pruner_of_module(self, module):
         p = self.CUSTOMIZED_PRUNERS.get(module.__class__, None)

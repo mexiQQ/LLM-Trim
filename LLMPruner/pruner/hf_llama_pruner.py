@@ -468,7 +468,8 @@ class TaylorImportance(tp.importance.Importance):
                 # imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(head_related, torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1)))
                 imp = torch.mul(torch.norm(B, p=2, dim=0), torch.torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
                 # import pdb; pdb.set_trace()
-                imp2 = torch.mul(C_var, D_var).view(-1) 
+                # imp2 = torch.mul(C_var, D_var).view(-1) 
+                imp2 = torch.rand(group_multiplier["o_proj_l2_norm"].shape[0]).cuda()
                 group_imp = [imp, imp2]
             else:
                 k_importance = group_multiplier["k_proj"]
@@ -480,7 +481,7 @@ class TaylorImportance(tp.importance.Importance):
                     )
                 )
                 group_imp = [merged_group_multiplier]
-            # group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0])] 
+            group_imp = [torch.rand(group_multiplier["o_proj_l2_norm"].shape[0]).cuda()] 
         elif "mlp" in group[0][0].target.name:
             # mlp group
             # import pdb; pdb.set_trace()
@@ -576,8 +577,8 @@ class TaylorImportance(tp.importance.Importance):
                 )
                 group_imp = [imp]
 
-        if len(group_imp)==0:
-            return None
+        # if len(group_imp)==0:
+        #     return None
 
         # min_imp_size = min([len(imp) for imp in group_imp])
         # aligned_group_imp = []

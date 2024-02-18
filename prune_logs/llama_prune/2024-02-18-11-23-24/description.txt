@@ -1,0 +1,17 @@
+- Training Parameters: 
+  - base_model: baffo32/decapoda-research-llama-7B-hf
+  - save_ckpt_log_name: llama_prune
+  - pruning_ratio: 0.25
+  - max_seq_len: 128
+  - block_attention_layer_start: 11
+  - block_attention_layer_end: 12
+  - block_mlp_layer_start: 11
+  - block_mlp_layer_end: 12
+  - num_examples: 16
+  - device: cuda
+  - test_before_train: False
+  - eval_device: cuda
+  - test_after_train: False
+  - seed: 42
+  - save_model: False
+  - torch_version: 2.1

@@ -41,6 +41,7 @@
 
 
 
+
 [START] - Start Pruning Model with Local Mode: k_proj_p_1 and Pruning Ratio: 0.3
 {'wikitext2': 27.668995768810042}
 {'wikitext2': 27.668995768810042, 'ptb': 44.04255166984753}
