@@ -1,3 +1,26 @@
 echo "[START] - Start Pruning Model"
-CUDA_VISIBLE_DEVICES=2 python hf_prune_gpt2_layerwise.py --base_model baffo32/decapoda-research-llama-7B-hf --pruning_ratio 0.25 --device cuda --eval_device cuda --block_mlp_layer_start 11 --block_mlp_layer_end 12 --block_attention_layer_start 11 --block_attention_layer_end 12
+
+for stage in 1 2 3; do
+    CUDA_VISIBLE_DEVICES=2 python hf_prune_gpt2_layerwise.py \
+        --base_model openai-community/gpt2 \
+        --device cuda \
+        --eval_device cuda \
+        --block_mlp_layer_start 1 \
+        --block_mlp_layer_end 9 \
+        --block_attention_layer_start 1 \
+        --block_attention_layer_end 9 \
+        --pruning_ratio_attn 0.25 \
+        --pruning_ratio_mlp 0.25 \
+        --kq_mode qr_pivot \
+        --seed 3407 \
+        --num_examples 16 \
+        --max_seq_len 1024 \
+        --test_after_prune \
+        --prune_attn \
+        --prune_mlp \
+        --reconstruct \
+        --stage $stage
+done
+
 echo "[FINISH] - Finish Pruning Model"
+

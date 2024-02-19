@@ -61,7 +61,7 @@ def PPLMse2(model, target_model, tokenizer, datasets, seq_len=128, batch_size = 
         _, test_loader = get_loaders(dataset, tokenizer, seq_len=seq_len, batch_size = batch_size)
         loss_atten, loss_mlp, ppl  = llama_eval_logits2(model, target_model, test_loader, device)
         metric[dataset] = {"loss_attn": loss_atten, "loss_mlp": loss_mlp, "ppl": ppl} 
-        print(metric)
+        # print(metric)
     return metric
 
 @torch.no_grad()

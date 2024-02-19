@@ -343,7 +343,7 @@ class MetaPruner:
                     imp = imp[:len(imp)//ch_groups]
 
                 random = False 
-                kq_mode = 4 
+                kq_mode = 3 
 
                 if consecutive_groups > 1:
                     max_val = imp.max() 

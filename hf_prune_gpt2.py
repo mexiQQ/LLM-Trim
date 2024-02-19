@@ -183,7 +183,7 @@ def main(args):
         for module in [model.transformer.h[i].attn.q_proj for i in range(args.block_attention_layer_start, args.block_attention_layer_end)]:
             ch_sparsity_dict[module] = 0.25
         for module in [model.transformer.h[i].mlp.up_proj for i in range(args.block_mlp_layer_start, args.block_mlp_layer_end)]:
-            ch_sparsity_dict[module] = 0.2
+            ch_sparsity_dict[module] = 0.25
 
         pruner = tp.pruner.MetaPruner(
             model,
@@ -318,11 +318,10 @@ def main(args):
     #     model.half()
     model.to(args.eval_device)
 
-    # import pdb; pdb.set_trace()
-
-    model.config.pad_token_id = tokenizer.pad_token_id = 0 
-    model.config.bos_token_id = 1
-    model.config.eos_token_id = 2
+    import pdb; pdb.set_trace()
+    # model.config.pad_token_id = tokenizer.pad_token_id = 0 
+    # model.config.bos_token_id = 1
+    # model.config.eos_token_id = 2
 
     # if args.test_after_train:
     #     logger.log("\n==================Generation Results After Pruning================\n")

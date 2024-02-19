@@ -364,9 +364,9 @@ class GPT2Attention(nn.Module):
         else:
             attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
 
-        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
+        attn_output2 = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         # attn_output = self.c_proj(attn_output)
-        attn_output = self.o_proj(attn_output)
+        attn_output = self.o_proj(attn_output2)
         # attn_output = self.resid_dropout(attn_output)
 
         # import pdb; pdb.set_trace()
@@ -374,7 +374,7 @@ class GPT2Attention(nn.Module):
         if output_attentions:
             outputs += (attn_weights,)
 
-        return outputs  # a, present, (attentions)
+        return outputs, attn_output2   # a, present, (attentions)
 
 i = 0
 class GPT2MLP(nn.Module):
@@ -406,7 +406,7 @@ class GPT2MLP(nn.Module):
         #     self.covcal.add(reshaped_x[j])
 
         hidden_states = self.up_proj(hidden_states)
-        hidden_states = self.act(hidden_states)
+        hidden_states2 = self.act(hidden_states)
 
         # if self.index == 0:
         #     global i
@@ -428,9 +428,9 @@ class GPT2MLP(nn.Module):
         # print(f"{self.index}th layer mean: {mean_proportion}, std: {std_proportion}")
         # print("**" * 20)
 
-        hidden_states = self.down_proj(hidden_states)
+        hidden_states = self.down_proj(hidden_states2)
         # hidden_states = self.dropout(hidden_states)
-        return hidden_states
+        return hidden_states, hidden_states2
 
 
 class GPT2Block(nn.Module):
@@ -463,7 +463,7 @@ class GPT2Block(nn.Module):
     ) -> Union[Tuple[torch.Tensor], Optional[Tuple[torch.Tensor, Tuple[torch.FloatTensor, ...]]]]:
         residual = hidden_states
         hidden_states = self.ln_1(hidden_states)
-        attn_outputs = self.attn(
+        attn_outputs, _ = self.attn(
             hidden_states,
             layer_past=layer_past,
             attention_mask=attention_mask,
@@ -503,7 +503,7 @@ class GPT2Block(nn.Module):
 
         residual = hidden_states
         hidden_states = self.ln_2(hidden_states)
-        feed_forward_hidden_states = self.mlp(hidden_states)
+        feed_forward_hidden_states, _ = self.mlp(hidden_states)
         # residual connection
         hidden_states = residual + feed_forward_hidden_states
 
