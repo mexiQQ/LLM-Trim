@@ -40,7 +40,7 @@ def get_bookcorpus(tokenizer, n_samples, seq_len):
     return torch.cat(tokenized_samples, dim=0 )
 
 def get_wikitext2(tokenizer, n_samples, seq_len):
-    traindata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
+    traindata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
     token_ids = tokenizer("\n\n".join(traindata["text"]), return_tensors='pt').input_ids[0]
     token_ids_batch = []
 

@@ -65,6 +65,10 @@ def main(args):
         model.half()
     model.to(args.device)
 
+    ppl = PPLMetric(model, tokenizer, ['wikitext2', 'ptb'], args.max_seq_len, device=args.device)
+    logger.log("PPL before pruning: {}".format(ppl))
+    import pdb; pdb.set_trace()
+
     if args.test_before_train:
         logger.log("\n==================Generation Results before Pruning================\n")
         model.eval()

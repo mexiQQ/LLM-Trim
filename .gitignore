@@ -21,6 +21,7 @@ flagged/
 script/
 wandb
 log/
+/prune_logs
 tiny_*
 lora-*
 results

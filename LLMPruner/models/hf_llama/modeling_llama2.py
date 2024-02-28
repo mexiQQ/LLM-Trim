@@ -106,22 +106,9 @@ class LlamaRotaryEmbedding(torch.nn.Module):
         self.register_buffer("cos_cached", emb.cos()[None, None, :, :], persistent=False)
         self.register_buffer("sin_cached", emb.sin()[None, None, :, :], persistent=False)
 
-    def update_dim(self, dim=128, base=10000):
-        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float().to(self.inv_freq.device) / dim))
-        self.register_buffer("inv_freq", inv_freq)
-
-        # Build here to make `torch.jit.trace` work.
-        t = torch.arange(self.max_seq_len_cached, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
-        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
-        # Different from paper, but it uses a different permutation in order to obtain the same calculation
-        emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer("cos_cached", emb.cos()[None, None, :, :], persistent=False)
-        self.register_buffer("sin_cached", emb.sin()[None, None, :, :], persistent=False)
-
     def forward(self, x, seq_len=None):
         # x: [bs, num_attention_heads, seq_len, head_size]
         # This `if` block is unlikely to be run after we build sin/cos in `__init__`. Keep the logic here just in case.
-        
         if seq_len > self.max_seq_len_cached:
             self.max_seq_len_cached = seq_len
             t = torch.arange(self.max_seq_len_cached, device=x.device, dtype=self.inv_freq.dtype)
@@ -140,103 +127,46 @@ def rotate_half(x):
     """Rotates half the hidden dims of the input."""
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
-    # import pdb; pdb.set_trace()
     return torch.cat((-x2, x1), dim=-1)
 
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
-    # import os
-    # if os.environ.get("debug") == "1":
-    #     import pdb; pdb.set_trace()
-
     gather_indices = position_ids[:, None, :, None]  # [bs, 1, seq_len, 1]
     gather_indices = gather_indices.repeat(1, cos.shape[1], 1, cos.shape[3])
     cos = torch.gather(cos.repeat(gather_indices.shape[0], 1, 1, 1), 2, gather_indices)
     sin = torch.gather(sin.repeat(gather_indices.shape[0], 1, 1, 1), 2, gather_indices)
     
-    # import os
-    # if os.environ.get("debug") == "1":
-    #     import pdb; pdb.set_trace()
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
 
 
-i = 0
-mean_input_mlp = None
 class LlamaMLP(nn.Module):
     def __init__(
         self,
         hidden_size: int,
         intermediate_size: int,
         hidden_act: str,
-        index: int
     ):
         super().__init__()
-        self.index = index
         self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
         self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
         self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x):
-        if self.index == 0:
-            global i
-            global mean_input_mlp
-            # 为了统计均值，查看 data sort norm 后，45% 55% 处的值和 random 的关系，是否和weight相近
-            if i >= 2:
-                if mean_input_mlp == None: 
-                    mean_input_mlp = x.view(-1, x.shape[-1]).mean(dim=0)
-                else:
-                    mean_input_mlp += x.view(-1, x.shape[-1]).mean(dim=0)
-                    mean_input_mlp /= i-1
-            i+=1
-            # import pdb; pdb.set_trace()
-            # if i == 160:
-                # import pdb; pdb.set_trace()
-        
-        # reshaped_x = x.view(-1, x.shape[-1])
-        # mean_x = torch.mean(reshaped_x, dim=0)
-        # demeaned_x = reshaped_x - mean_x
-        # cov_matrix = torch.matmul(demeaned_x.T, demeaned_x) / (demeaned_x.size(0) - 1)
-        # torch.save(cov_matrix, f'./cov/cov_matrix_{self.index}.pt')
-
-        gate = self.act_fn(self.gate_proj(x))
-        # matrix = gate
-        # values_in_range = (matrix >= -4) & (matrix <= -0.2785)
-        # hidden_dimension = gate.shape[-1]
-        # proportions = values_in_range.sum(dim=2) / hidden_dimension
-        # mean_proportion = proportions.mean().item()
-        # std_proportion = proportions.std().item()
-        # print("**" * 20)
-        # print(f"{self.index}th layer mean: {mean_proportion}, std: {std_proportion}")
-        # print("**" * 20)
-
-        up = self.up_proj(x)
-        down = self.down_proj(gate * up)
-        return down
-        # return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
-j = 0
 class LlamaAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
-    def __init__(
-        self, config: LlamaConfig, index
-    ):
+    def __init__(self, config: LlamaConfig):
         super().__init__()
-        self.index = index
         self.config = config
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
-        self.q_num_heads = config.num_attention_heads
-        self.k_num_heads = config.num_attention_heads
-        self.v_num_heads = config.num_attention_heads
-        self.q_head_dim = self.hidden_size // self.q_num_heads
-        self.k_head_dim = self.hidden_size // self.k_num_heads
-        self.v_head_dim = self.hidden_size // self.v_num_heads
-        self.head_dim = self.hidden_size // self.num_heads 
+        self.head_dim = self.hidden_size // self.num_heads
         self.max_position_embeddings = config.max_position_embeddings
 
         if (self.head_dim * self.num_heads) != self.hidden_size:
@@ -264,31 +194,15 @@ class LlamaAttention(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         bsz, q_len, _ = hidden_states.size()
 
-        if self.index == 0:
-            global j
-            j += 1
-            # import pdb; pdb.set_trace()
-
-        # reshaped_x = hidden_states.view(-1, hidden_states.shape[-1])
-        # mean_x = torch.mean(reshaped_x, dim=0)
-        # demeaned_x = reshaped_x - mean_x
-        # cov_matrix = torch.matmul(demeaned_x.T, demeaned_x) / (demeaned_x.size(0) - 1)
-        # torch.save(cov_matrix, f'./cov_attn/cov_matrix_{self.index}.pt')
-
-        query_states = self.q_proj(hidden_states).view(bsz, q_len, self.q_num_heads, self.q_head_dim).transpose(1, 2)
-        key_states = self.k_proj(hidden_states).view(bsz, q_len, self.k_num_heads, self.k_head_dim).transpose(1, 2)
-        value_states = self.v_proj(hidden_states).view(bsz, q_len, self.v_num_heads, self.v_head_dim).transpose(1, 2)
+        query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
 
         kv_seq_len = key_states.shape[-2]
         if past_key_value is not None:
             kv_seq_len += past_key_value[0].shape[-2]
         cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
-
-        # if self.index == 4:
-        #     import os
-        #     if os.environ.get("debug") == "1":
-        #         import pdb; pdb.set_trace()
-
+ 
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
         # [bsz, nh, t, hd]
 
@@ -317,11 +231,6 @@ class LlamaAttention(nn.Module):
 
         # upcast attention to fp32
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
-
-        # import os
-        # if os.environ.get("debug") == "1":
-        #     import pdb; pdb.set_trace()
-
         attn_output = torch.matmul(attn_weights, value_states)
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
@@ -342,16 +251,14 @@ class LlamaAttention(nn.Module):
 
 
 class LlamaDecoderLayer(nn.Module):
-    def __init__(self, config: LlamaConfig, index):
+    def __init__(self, config: LlamaConfig):
         super().__init__()
         self.hidden_size = config.hidden_size
-        self.self_attn = LlamaAttention(config, index=index)
-        self.index = index
+        self.self_attn = LlamaAttention(config=config)
         self.mlp = LlamaMLP(
             hidden_size=self.hidden_size,
             intermediate_size=config.intermediate_size,
             hidden_act=config.hidden_act,
-            index=index
         )
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -384,21 +291,21 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = self.input_layernorm(hidden_states)
 
         # Self Attention
-        attn_hidden_states, self_attn_weights, present_key_value = self.self_attn(
-            hidden_states,
+        hidden_states, self_attn_weights, present_key_value = self.self_attn(
+            hidden_states=hidden_states,
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             use_cache=use_cache,
         )
-        hidden_states = residual + attn_hidden_states
+        hidden_states = residual + hidden_states
 
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
-        mlp_hidden_states = self.mlp(hidden_states)
-        hidden_states = residual + mlp_hidden_states
+        hidden_states = self.mlp(hidden_states)
+        hidden_states = residual + hidden_states
 
         outputs = (hidden_states,)
 
@@ -408,7 +315,7 @@ class LlamaDecoderLayer(nn.Module):
         if use_cache:
             outputs += (present_key_value,)
 
-        return outputs, attn_hidden_states, mlp_hidden_states
+        return outputs
 
 
 LLAMA_START_DOCSTRING = r"""
@@ -537,7 +444,7 @@ class LlamaModel(LlamaPreTrainedModel):
         self.vocab_size = config.vocab_size
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
-        self.layers = nn.ModuleList([LlamaDecoderLayer(config, i) for i in range(config.num_hidden_layers)])
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
         self.gradient_checkpointing = False
@@ -661,7 +568,7 @@ class LlamaModel(LlamaPreTrainedModel):
 
                     return custom_forward
 
-                layer_outputs, _, _ = torch.utils.checkpoint.checkpoint(
+                layer_outputs = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(decoder_layer),
                     hidden_states,
                     attention_mask,
@@ -669,10 +576,10 @@ class LlamaModel(LlamaPreTrainedModel):
                     None,
                 )
             else:
-                layer_outputs, _, _ = decoder_layer(
+                layer_outputs = decoder_layer(
                     hidden_states,
-                    attention_mask,
-                    position_ids,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
                     past_key_value=past_key_value,
                     output_attentions=output_attentions,
                     use_cache=use_cache,

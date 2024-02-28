@@ -42,13 +42,19 @@ def process_data(samples, tokenizer, seq_len, field_name):
     return IndexDataset(tensors=test_ids_batch)
        
 
-def get_loaders(name, tokenizer, seq_len=2048, batch_size = 8):
+def get_loaders(name, tokenizer, seq_len=2048, batch_size = 8, train=False):
     if 'wikitext2' in name:
         train_data, test_data = get_wikitext2(seq_len, tokenizer)
-        test_dataset = process_data(test_data, tokenizer, seq_len, 'text')
+        if train:
+            dataset = process_data(train_data, tokenizer, seq_len, 'text')
+        else:
+            dataset = process_data(test_data, tokenizer, seq_len, 'text')
     if 'ptb' in name:
         train_data, test_data = get_ptb(seq_len, tokenizer)
-        test_dataset = process_data(test_data, tokenizer, seq_len, 'sentence')
+        if train:
+            dataset = process_data(train_data, tokenizer, seq_len, 'sentence')
+        else:
+            dataset = process_data(test_data, tokenizer, seq_len, 'sentence')
 
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    return train_data, test_loader
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    return dataset, dataloader

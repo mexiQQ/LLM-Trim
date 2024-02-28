@@ -204,10 +204,14 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights / torch.full(
                 [], value.size(-1) ** 0.5, dtype=attn_weights.dtype, device=attn_weights.device
             )
+            # import pdb; pdb.set_trace()
 
         # Layer-wise attention scaling
         if self.scale_attn_by_inverse_layer_idx:
             attn_weights = attn_weights / float(self.layer_idx + 1)
+            print("warining ****************************")
+            print("warining ****************************")
+            print("warining ****************************")
 
         if not self.is_cross_attention:
             # if only "normal" attention layer implements causal mask
@@ -222,6 +226,9 @@ class GPT2Attention(nn.Module):
         if attention_mask is not None:
             # Apply the attention mask
             attn_weights = attn_weights + attention_mask
+            print("warining ############################")
+            print("warining ############################") 
+            print("warining ############################")
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
