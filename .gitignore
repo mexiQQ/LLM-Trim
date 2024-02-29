@@ -22,6 +22,7 @@ script/
 wandb
 log/
 /prune_logs
+/job_logs
 tiny_*
 lora-*
 results

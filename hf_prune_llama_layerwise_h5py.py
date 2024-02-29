@@ -121,14 +121,14 @@ def find_first_element_in_recursive_tuple(x):
 
 def load_data_from_disk(hdpy_file, name, start_index, end_index):
     data = hdpy_file[name][start_index:end_index]
-    return torch.from_numpy(data).to(args.device)
+    return torch.from_numpy(data)
 
 lm_head_hook_forbidden = False 
 def main(args):
     set_random_seed(args.seed)
-    nbatchs = 5
+    nbatches = args.nbatches
     batch_size = args.batch_size 
-    nsamples = batch_size * nbatchs 
+    nsamples = batch_size * nbatches 
     file_path = "/mnt/beegfs/jli265/output/llm_pruner/c31/hdf5_file.h5"
 
     logger = LoggerWithDepth(
@@ -164,15 +164,25 @@ def main(args):
     ori_inputs = {}
     ori_attention_mask = {}
     ori_position_ids = {}
+    dataset_configs = {}
+    file = h5py.File(file_path, 'a')
     start_key = f"model.layers.{args.block_attention_layer_start}"
+
     def create_hook(name, file, dataset_configs):
         def hook(module, input, output):
-
             if name == start_key:
                 if name not in ori_attention_mask:
                     ori_attention_mask[name] = input[1].cpu()
                 if name not in ori_position_ids:
                     ori_position_ids[name] = input[2].cpu()
+
+                if name not in ori_inputs:
+                    ori_inputs[name] = find_first_element_in_recursive_tuple(input).cpu()
+                else:
+                    ori_inputs[name] = torch.cat((
+                        ori_inputs[name],
+                        find_first_element_in_recursive_tuple(input).cpu()
+                    ), dim=0)
 
             output_data = find_first_element_in_recursive_tuple(output).cpu().numpy()
             output_dataset_name = f"{name}/output"
@@ -185,24 +195,9 @@ def main(args):
                 dataset = dataset_configs[output_dataset_name]
                 dataset.resize((dataset.shape[0] + output_data.shape[0]), axis=0)
                 dataset[-output_data.shape[0]:] = output_data
-
-            input_data = find_first_element_in_recursive_tuple(input).cpu().numpy()
-            input_dataset_name = f"{name}/input"
-
-            if input_dataset_name not in  dataset_configs:
-                maxshape = (None,)+input_data.shape[1:]
-                chunksize = (args.batch_size,)+input_data.shape[1:]
-                dataset_configs[input_dataset_name] = file.create_dataset(input_dataset_name, data=input_data, maxshape=maxshape, chunks=chunksize)
-            else:
-                dataset = dataset_configs[input_dataset_name]
-                dataset.resize((dataset.shape[0] + input_data.shape[0]), axis=0)
-                dataset[-input_data.shape[0]:] = input_data
-            return output
         return hook
 
     handlers={}
-    dataset_configs = {}
-    file = h5py.File(file_path, 'a')
     for name, layer in model.named_modules():
         if "self_attn" in name and type(layer) in [LlamaAttention, nn.Linear]:
             layer_number = int(re.findall(r"layers\.(\d+)\.(?:mlp|self_attn)", name)[0])
@@ -218,9 +213,9 @@ def main(args):
             handlers[name] = layer.register_forward_hook(create_hook(name, file, dataset_configs))
 
     for idx, batch in enumerate(dataloader):
-        print(f"mini batch {idx}")
-        if idx >= nbatchs:
+        if idx >= nbatches:
             break
+        logger.log(f"mini batch {idx}")
         with torch.no_grad():
             batch = batch.to(args.device)
             model(batch)
@@ -231,10 +226,8 @@ def main(args):
         handler.remove()
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
     del model
-    file.close()
     torch.cuda.empty_cache()
 
-    import pdb; pdb.set_trace()
     print("*" * 15)
     print("*" * 15)
 
@@ -250,7 +243,7 @@ def main(args):
     xs = {}
     data_index = {"start": 0}
 
-    def create_hook2(name):
+    def create_hook2(name, file, dataset_configs):
         def hook2(module: torch.nn.Module, input, output):
             x = input[0]
             if name not in xs:
@@ -259,7 +252,13 @@ def main(args):
                 xs[name] = torch.cat((xs[name], x.cpu()), dim=0)
 
             x = x.view(-1, x.shape[-1])
-            y = ori_outputs[name][data_index["start"]:data_index["start"]+args.batch_size].to(args.device)
+            output_dataset_name = f"{name}/output"
+            y = load_data_from_disk(
+                dataset_configs,
+                output_dataset_name,
+                data_index["start"],
+                data_index["start"]+args.batch_size
+            ).to(args.device)
 
             xtx = torch.matmul(x.T, x).cpu()
             xty = torch.matmul(x.T, y.view(-1, y.shape[-1])).cpu()
@@ -296,7 +295,7 @@ def main(args):
         for name, layer in module.named_modules():
             if type(layer) in [nn.Linear, LlamaAttention, LlamaMLP]:
                 ori_name = f"model.layers.{index}.{name}"
-                handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name))
+                handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name, file, dataset_configs))
         module.to(args.device)
 
         #########################################################################
@@ -473,13 +472,14 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        ori_y = ori_outputs[name_]
+        ori_y_key = f"{name_}/output"
         attn_loss = 0
         with torch.no_grad():
             for input_index in range(0, nsamples, batch_size):
                 inp = inputs[input_index:input_index+batch_size, :, :].cuda()
                 _, res, _ = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
+                # y_label = ori_y[input_index:input_index+batch_size, :, :]
+                y_label = load_data_from_disk(dataset_configs, ori_y_key, input_index, input_index+batch_size)
                 attn_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
                 del res
                 del inp
@@ -487,7 +487,7 @@ def main(args):
                 data_index["start"] += batch_size 
 
         attn_loss /= math.ceil(nsamples/batch_size)
-        print(f"{name_} reconstruct error is", attn_loss)
+        logger.log(f"{name_} reconstruct error is {attn_loss}")
 
         xtxs = {}
         xtys = {}
@@ -618,13 +618,14 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        ori_y = ori_outputs[name_]
+        ori_y_key = f"{name_}/output"
         mlp_loss = 0
         with torch.no_grad():
             for input_index in range(0, nsamples, batch_size):
                 inp = inputs[input_index:input_index+batch_size, :, :].cuda()
                 _, _, res = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
+                # y_label = ori_y[input_index:input_index+batch_size, :, :]
+                y_label = load_data_from_disk(dataset_configs, ori_y_key, input_index, input_index+batch_size)
                 mlp_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
                 del res
                 del inp
@@ -632,7 +633,7 @@ def main(args):
                 data_index["start"] += batch_size 
 
         mlp_loss /= math.ceil(nsamples/batch_size)
-        print(f"{name_} reconstruct error is", mlp_loss)
+        logger.log(f"{name_} reconstruct error is {mlp_loss}")
 
         xtxs = {}
         xtys = {}
@@ -673,6 +674,8 @@ def main(args):
         inputs = module_outputs["outputs"]
         torch.cuda.empty_cache()
 
+    # close hdpy file
+    file.close() 
     after_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.log("#Param before: {}, #Param after: {}, Ratio = {:.4f}%".format(before_pruning_parameters, after_pruning_parameters,  100.0*after_pruning_parameters/before_pruning_parameters))
 
@@ -728,7 +731,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="wikitext2", help='data set name')
     parser.add_argument('--max_seq_len', type=int, default=128, help='max sequence length')
     parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--num_examples', type=int, default=16)
+    parser.add_argument('--nbatches', type=int, default=8)
 
     # general argument
     parser.add_argument('--device', type=str, default="cuda", help='device')
