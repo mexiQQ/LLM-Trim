@@ -125,12 +125,12 @@ def main(args):
     batch_size = args.batch_size 
     nsamples = batch_size * nbatches 
 
-    logger = LoggerWithDepth(
-        env_name="{}".format(args.save_ckpt_log_name), 
-        config=args.__dict__,
-        root_dir='prune_logs',
-        setup_sublogger=True
-    )
+    # logger = LoggerWithDepth(
+    #     env_name="{}".format(args.save_ckpt_log_name), 
+    #     config=args.__dict__,
+    #     root_dir='prune_logs',
+    #     setup_sublogger=True
+    # )
 
     tokenizer = LlamaTokenizer.from_pretrained(args.base_model)
     model = LlamaForCausalLM.from_pretrained(
@@ -138,8 +138,6 @@ def main(args):
         low_cpu_mem_usage=True if args.torch_version >=1.9 else False
     ) 
 
-    # if args.device != "cpu":
-    #     model.half()
     target_model = copy.deepcopy(model)
     model.to(args.device)
 
@@ -154,7 +152,6 @@ def main(args):
         train=True
     )
 
-    ori_outputs = {}
     ori_inputs = {}
     ori_attention_mask = {}
     ori_position_ids = {}
@@ -163,10 +160,10 @@ def main(args):
         def hook(module, input, output):
             if name == start_key:
                 if name not in ori_attention_mask:
-                    ori_attention_mask[name] = input[1].cpu()
+                    ori_attention_mask[name] = input[1][:1].cpu()
                 if name not in ori_position_ids:
                     ori_position_ids[name] = input[2].cpu()
-
+                
                 if name not in ori_inputs:
                     ori_inputs[name] = find_first_element_in_recursive_tuple(input).cpu()
                 else:
@@ -174,29 +171,11 @@ def main(args):
                         ori_inputs[name],
                         find_first_element_in_recursive_tuple(input).cpu()
                     ), dim=0)
-
-            if name not in ori_outputs:
-                ori_outputs[name] = find_first_element_in_recursive_tuple(output).cpu()
-            else:
-                ori_outputs[name] = torch.cat((
-                    ori_outputs[name], 
-                    find_first_element_in_recursive_tuple(output).cpu()
-                ), dim=0)
             return output
         return hook
 
     handlers={}
     for name, layer in model.named_modules():
-        if "self_attn" in name and type(layer) in [LlamaAttention, nn.Linear]:
-            layer_number = int(re.findall(r"layers\.(\d+)\.(?:mlp|self_attn)", name)[0])
-            if layer_number >= args.block_attention_layer_start:
-                handlers[name] = layer.register_forward_hook(create_hook(name))
-        if "mlp" in name and type(layer) in [LlamaMLP, nn.Linear]:
-            layer_number = int(re.findall(r"layers\.(\d+)\.(?:mlp|self_attn)", name)[0])
-            if  layer_number >= args.block_mlp_layer_start:
-                handlers[name] = layer.register_forward_hook(create_hook(name))
-        if "lm_head" in name and type(layer) == torch.nn.Linear:
-            handlers[name] = layer.register_forward_hook(create_hook(name))
         if name == start_key:
             handlers[name] = layer.register_forward_hook(create_hook(name))
 
@@ -212,16 +191,16 @@ def main(args):
 
     for _,handler in handlers.items():
         handler.remove()
-    logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+    print("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+
     del model
     torch.cuda.empty_cache()
-
     print("*" * 15)
     print("*" * 15)
 
     ########################## second stage #################################
     #########################################################################
-    model = target_model
+    model = copy.deepcopy(target_model) 
     pruner = LinearPruner()
     mse = nn.MSELoss()
 
@@ -230,8 +209,9 @@ def main(args):
     normalize_term = {}
     xs = {}
     data_index = {"start": 0}
+    ori_outputs = {}
 
-    def create_hook2(name):
+    def create_hook2(name, module_batch_size):
         def hook2(module: torch.nn.Module, input, output):
             x = input[0]
             if name not in xs:
@@ -240,7 +220,7 @@ def main(args):
                 xs[name] = torch.cat((xs[name], x.cpu()), dim=0)
 
             x = x.view(-1, x.shape[-1])
-            y = ori_outputs[name][data_index["start"]:data_index["start"]+args.batch_size].to(args.device)
+            y = ori_outputs[name][data_index["start"]:data_index["start"]+module_batch_size].to(args.device)
 
             xtx = torch.matmul(x.T, x).cpu()
             xty = torch.matmul(x.T, y.view(-1, y.shape[-1])).cpu()
@@ -263,22 +243,60 @@ def main(args):
             return output
         return hook2
 
+    def create_hook3(name):
+        def hook(module, input, output):
+            if name not in ori_outputs:
+                ori_outputs[name] = find_first_element_in_recursive_tuple(output).cpu()
+            else:
+                ori_outputs[name] = torch.cat((
+                    ori_outputs[name], 
+                    find_first_element_in_recursive_tuple(output).cpu()
+                ), dim=0)
+            return output
+        return hook
+
     # inputs of decoder layer 0
+    module_batch_size = batch_size * 10 
     inputs = ori_inputs[start_key]
-    attn_mask = ori_attention_mask[start_key].cuda()
+    ori_inputs = copy.deepcopy(inputs)
     pos_ids = ori_position_ids[start_key].cuda()
+    attn_mask = ori_attention_mask[start_key].expand(module_batch_size, -1, -1, -1).cuda()
 
     # recursive to prune llama block
     for index in range(args.block_attention_layer_start, len(model.model.layers)):
         print("*" * 10, "Block", index, "*" * 10)
         module = model.model.layers[index]
+        target_module = target_model.model.layers[index]
 
         handlers = {}
         for name, layer in module.named_modules():
             if type(layer) in [nn.Linear, LlamaAttention, LlamaMLP]:
                 ori_name = f"model.layers.{index}.{name}"
-                handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name))
+                handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name, module_batch_size))
         module.to(args.device)
+
+        target_handlers = {}
+        for name, layer in target_module.named_modules():
+            if type(layer) in [nn.Linear, LlamaAttention, LlamaMLP]:
+                ori_name = f"model.layers.{index}.{name}"
+                target_handlers[ori_name] = layer.register_forward_hook(create_hook3(ori_name))
+        target_module.to(args.device)
+
+        # generate original output
+        target_outputs = {}
+        with torch.no_grad():
+            for input_index in range(0, nsamples, module_batch_size):
+                inp = ori_inputs[input_index:input_index+module_batch_size, :, :].cuda()
+                res, _, _ = target_module(inp, attn_mask, pos_ids)
+                if "outputs" not in target_outputs:
+                    target_outputs["outputs"] = res[0].cpu()
+                else:
+                    target_outputs["outputs"] = torch.cat((target_outputs["outputs"], res[0].cpu()), dim=0)
+                del res
+                del inp
+                torch.cuda.empty_cache()
+                data_index["start"] += module_batch_size 
+        data_index = {"start": 0}
 
         #########################################################################
         #########################################################################
@@ -286,15 +304,15 @@ def main(args):
         name_ = f"model.layers.{index}.self_attn"
         layer_ = module.self_attn
 
-        if args.reconstruct and index > args.block_attention_layer_start and index < args.block_attention_layer_end:
+        if args.reconstruct and index > args.block_attention_layer_start and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
-                for input_index in range(0, nsamples, batch_size):
-                    inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                for input_index in range(0, nsamples, module_batch_size):
+                    inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                     res, _, _ = module(inp, attn_mask, pos_ids)
                     del res
                     del inp
                     torch.cuda.empty_cache()
-                    data_index["start"] += batch_size 
+                    data_index["start"] += module_batch_size 
             
             nterm = normalize_term[name_]
             xtx = (xtxs[name_]/nterm).cuda()
@@ -349,15 +367,15 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        if args.reconstruct and index > args.block_attention_layer_start and index < args.block_attention_layer_end:
+        if args.reconstruct and index > args.block_attention_layer_start and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
-                for input_index in range(0, nsamples, batch_size):
-                    inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                for input_index in range(0, nsamples, module_batch_size):
+                    inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                     res, _, _ = module(inp, attn_mask, pos_ids)
                     del res
                     del inp
                     torch.cuda.empty_cache()
-                    data_index["start"] += batch_size 
+                    data_index["start"] += module_batch_size 
 
             nterm = normalize_term[f"{name_}.o_proj"]
             xtx = (xtxs[f"{name_}.o_proj"]/nterm).cuda()
@@ -389,7 +407,7 @@ def main(args):
 
         if args.prune_attn and index >= args.block_attention_layer_start and index < args.block_attention_layer_end:
 
-            mode = 1 
+            mode = args.attn_mode
             if mode == 1:
                 current_channels = layer_.v_proj.weight.shape[0] 
                 n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
@@ -415,133 +433,7 @@ def main(args):
                 layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
                 layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
 
-            # l2 greedy prune k q; 2nd moment v o in head mode 
             if mode == 2:
-                current_channels = layer_.v_proj.weight.shape[0] 
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                consecutive_groups = 128 
-                head_number = 32
-
-                A = layer_.v_proj.weight
-                B = layer_.o_proj.weight
-                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                imp_ov = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
-
-                imp_k = torch.norm(layer_.k_proj.weight, p=2, dim=1)
-                imp_q = torch.norm(layer_.q_proj.weight, p=2, dim=1)
-                imp_kq = torch.mul(imp_k, imp_q)
-
-                imp = torch.mul(imp_ov, imp_kq)
-                # imp = torch.add(imp_ov, imp_kq)
-                imp = imp.view(-1, consecutive_groups).sum(1)
-                imp_argsort = torch.argsort(imp)
-
-                pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)] # 129
-                group_size = consecutive_groups
-                pruning_idxs = torch.cat(
-                    [torch.tensor([j+group_size*i for j in range(group_size)])
-                        for i in pruning_groups], 0)
-
-                _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
-                layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
-                layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
-                layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
-
-            # l2 greedy prune k q v o in head mode
-            if mode == 3:
-                current_channels = layer_.v_proj.weight.shape[0] 
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                consecutive_groups = 128
-                head_number = 32
-
-                imp_v = torch.norm(layer_.v_proj.weight, p=2, dim=1)
-                imp_o = torch.norm(layer_.o_proj.weight, p=2, dim=0)
-                imp_ov = torch.mul(imp_v, imp_o)
-
-                imp_k = torch.norm(layer_.k_proj.weight, p=2, dim=1)
-                imp_q = torch.norm(layer_.q_proj.weight, p=2, dim=1)
-                imp_kq = torch.mul(imp_k, imp_q)
-
-                imp = torch.mul(imp_ov, imp_kq)
-                # imp = torch.add(imp_ov, imp_kq)
-                imp = imp.view(-1, consecutive_groups).sum(1)
-            
-                sampling=True
-                if sampling:
-                    imp = imp / imp.sum()
-                    imp_neg = 1 - imp
-                    pruning_groups = torch.multinomial(imp_neg, n_pruned//consecutive_groups, replacement=False)
-                else:
-                    imp_argsort = torch.argsort(imp)
-                    pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
-
-                group_size = consecutive_groups
-                pruning_idxs = torch.cat(
-                    [torch.tensor([j+group_size*i for j in range(group_size)])
-                        for i in pruning_groups], 0)
-
-                _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
-                layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
-                layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
-                layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
-
-            # 2nd moment (k,q,v,o) greedy prune k q v o in head mode
-            if mode == 4:
-                current_channels = layer_.v_proj.weight.shape[0] 
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                consecutive_groups = 128
-                head_number = 32
-
-                A = layer_.v_proj.weight
-                B = layer_.o_proj.weight
-                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                imp_ov = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
-
-                C = layer_.q_proj.weight
-                D = layer_.k_proj.weight
-                C_var = torch.mul(torch.matmul(C, cov_matrix), C).sum(1)
-                D_var = torch.mul(torch.matmul(D, cov_matrix), D).sum(1)
-                imp_kq = torch.mul(C_var, D_var)
-
-                imp = torch.mul(imp_ov, imp_kq)
-                # imp = torch.add(imp_ov, imp_kq)
-                imp = imp.view(-1, consecutive_groups).sum(1)
-
-                sampling=True
-                if sampling:
-                    imp = imp / imp.sum()
-                    imp_neg = 1 - imp
-                    pruning_groups = torch.multinomial(imp_neg, n_pruned//consecutive_groups, replacement=False)
-                else:
-                    imp_argsort = torch.argsort(imp)
-                    pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
-
-                group_size = consecutive_groups
-                pruning_idxs = torch.cat(
-                    [torch.tensor([j+group_size*i for j in range(group_size)])
-                        for i in pruning_groups], 0)
-
-                _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
-                layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
-                layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
-                layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
-
-            if mode == 5:
                 A = layer_.v_proj.weight
                 B = layer_.o_proj.weight
                 cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
@@ -567,121 +459,6 @@ def main(args):
                 _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
 
                 layer_.v_head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
-               
-                imp = torch.rand(current_channels).to(args.device)
-                imp = imp.view(-1, consecutive_groups) 
-                imp_argsort = torch.argsort(imp, dim=1)
-
-                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
-                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                pruning_idxs = pruning_idxs.view(-1)
-
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_head_dim = layer_.q_proj.weight.data.shape[0] // layer_.q_num_heads
-                layer_.k_head_dim = layer_.k_proj.weight.data.shape[0] // layer_.k_num_heads
-                layer_.rotary_emb.update_dim(dim=layer_.q_head_dim)
-                layer_.head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
-
-            if mode == 6:
-                A = layer_.v_proj.weight
-                B = layer_.o_proj.weight
-                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
-                
-                current_channels = A.shape[0] 
-                consecutive_groups = 128 # head dim
-                head_number = 32 
-
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                max_val = imp.max() 
-                scaled_imp = imp / max_val
-                imp = scaled_imp.view(-1, consecutive_groups) 
-                imp_argsort = torch.argsort(imp, dim=1)
-
-                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
-                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                pruning_idxs = pruning_idxs.view(-1)
-
-                _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-
-                layer_.v_head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
-               
-                imp_k = torch.norm(layer_.k_proj.weight, p=2, dim=1)
-                imp_q = torch.norm(layer_.q_proj.weight, p=2, dim=1)
-                imp = torch.mul(imp_k, imp_q)
-                imp = imp.view(-1, consecutive_groups) 
-                imp_argsort = torch.argsort(imp, dim=1)
-
-                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
-                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                pruning_idxs = pruning_idxs.view(-1)
-
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_head_dim = layer_.q_proj.weight.data.shape[0] // layer_.q_num_heads
-                layer_.k_head_dim = layer_.k_proj.weight.data.shape[0] // layer_.k_num_heads
-                layer_.rotary_emb.update_dim(dim=layer_.q_head_dim)
-                layer_.head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
-
-            if mode == 7:
-                A = layer_.v_proj.weight
-                B = layer_.o_proj.weight
-                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
-                
-                current_channels = A.shape[0] 
-                consecutive_groups = 128 # head dim
-                head_number = 32 
-
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                max_val = imp.max() 
-                scaled_imp = imp / max_val
-                imp = scaled_imp.view(-1, consecutive_groups) 
-                imp_argsort = torch.argsort(imp, dim=1)
-
-                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
-                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                pruning_idxs = pruning_idxs.view(-1)
-
-                _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-
-                layer_.v_head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
-               
-                cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                C = layer_.q_proj.weight
-                D = layer_.k_proj.weight
-                C_var = torch.mul(torch.matmul(C, cov_matrix), C).sum(1)
-                D_var = torch.mul(torch.matmul(D, cov_matrix), D).sum(1)
-                imp = torch.mul(C_var, D_var)
-                imp = imp.view(-1, consecutive_groups) 
-                imp_argsort = torch.argsort(imp, dim=1)
-
-                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
-                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
-                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
-                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
-                pruning_idxs = pruning_idxs.view(-1)
-
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
-
-                layer_.q_head_dim = layer_.q_proj.weight.data.shape[0] // layer_.q_num_heads
-                layer_.k_head_dim = layer_.k_proj.weight.data.shape[0] // layer_.k_num_heads
-                layer_.rotary_emb.update_dim(dim=layer_.q_head_dim)
-                layer_.head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
 
         #########################################################################
         #########################################################################
@@ -689,17 +466,17 @@ def main(args):
         ori_y = ori_outputs[name_]
         attn_loss = 0
         with torch.no_grad():
-            for input_index in range(0, nsamples, batch_size):
-                inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+            for input_index in range(0, nsamples, module_batch_size):
+                inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                 _, res, _ = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
+                y_label = ori_y[input_index:input_index+module_batch_size, :, :]
                 attn_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
                 del res
                 del inp
                 torch.cuda.empty_cache()
-                data_index["start"] += batch_size 
+                data_index["start"] += module_batch_size 
 
-        attn_loss /= math.ceil(nsamples/batch_size)
+        attn_loss /= math.ceil(nsamples/module_batch_size)
         print(f"{name_} reconstruct error is", attn_loss)
 
         xtxs = {}
@@ -715,15 +492,15 @@ def main(args):
         name_ = f"model.layers.{index}.mlp"
         layer_ = module.mlp
 
-        if args.reconstruct and index < args.block_mlp_layer_end:
+        if args.reconstruct and (index < args.block_mlp_layer_end or args.reconstruct_dense):
             with torch.no_grad():
-                for input_index in range(0, nsamples, batch_size):
-                    inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                for input_index in range(0, nsamples, module_batch_size):
+                    inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                     res, _, _ = module(inp, attn_mask, pos_ids)
                     del res
                     del inp
                     torch.cuda.empty_cache()
-                    data_index["start"] += batch_size 
+                    data_index["start"] += module_batch_size 
 
             nterm = normalize_term[f"{name_}.up_proj"]
             xtx = (xtxs[f"{name_}.up_proj"]/nterm).cuda()
@@ -765,15 +542,15 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        if args.reconstruct and index < args.block_attention_layer_end:
+        if args.reconstruct and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
-                for input_index in range(0, nsamples, batch_size):
-                    inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                for input_index in range(0, nsamples, module_batch_size):
+                    inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                     res, _, _ = module(inp, attn_mask, pos_ids)
                     del res
                     del inp
                     torch.cuda.empty_cache()
-                    data_index["start"] += batch_size 
+                    data_index["start"] += module_batch_size 
 
             nterm = normalize_term[f"{name_}.down_proj"]
             xtx = (xtxs[f"{name_}.down_proj"]/nterm).cuda()
@@ -834,17 +611,17 @@ def main(args):
         ori_y = ori_outputs[name_]
         mlp_loss = 0
         with torch.no_grad():
-            for input_index in range(0, nsamples, batch_size):
-                inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+            for input_index in range(0, nsamples, module_batch_size):
+                inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                 _, _, res = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
+                y_label = ori_y[input_index:input_index+module_batch_size, :, :]
                 mlp_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
                 del res
                 del inp
                 torch.cuda.empty_cache()
-                data_index["start"] += batch_size 
+                data_index["start"] += module_batch_size 
 
-        mlp_loss /= math.ceil(nsamples/batch_size)
+        mlp_loss /= math.ceil(nsamples/module_batch_size)
         print(f"{name_} reconstruct error is", mlp_loss)
 
         xtxs = {}
@@ -859,10 +636,9 @@ def main(args):
 
         module_outputs = {}
         with torch.no_grad():
-            for input_index in range(0, nsamples, batch_size):
-                inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+            for input_index in range(0, nsamples, module_batch_size):
+                inp = inputs[input_index:input_index+module_batch_size, :, :].cuda()
                 res, _, _ = module(inp, attn_mask, pos_ids)
-                
                 if "outputs" not in module_outputs:
                     module_outputs["outputs"] = res[0].cpu()
                 else:
@@ -870,24 +646,30 @@ def main(args):
                 del res
                 del inp
                 torch.cuda.empty_cache()
-
-                data_index["start"] += batch_size
+                data_index["start"] += module_batch_size
 
         xtxs = {}
         xtys = {}
         xs = {}
         normalize_term = {}
         data_index = {"start": 0}
+        ori_outputs = {}
         for key in handlers.keys():
+            handlers[key].remove()
+        for key in target_handlers.keys():
             handlers[key].remove()
 
         module.to("cpu")
+        target_module.to("cpu")
+
         del inputs         
         inputs = module_outputs["outputs"]
+        del ori_inputs
+        ori_inputs = target_outputs["outputs"]
         torch.cuda.empty_cache()
 
     after_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.log("#Param before: {}, #Param after: {}, Ratio = {:.4f}%".format(before_pruning_parameters, after_pruning_parameters,  100.0*after_pruning_parameters/before_pruning_parameters))
+    print("#Param before: {}, #Param after: {}, Ratio = {:.4f}%".format(before_pruning_parameters, after_pruning_parameters,  100.0*after_pruning_parameters/before_pruning_parameters))
 
     if args.save_model:
         # torch.save(model, f"llama_sparse.pt")
@@ -898,7 +680,7 @@ def main(args):
                 'wikitext2', 
                 # 'ptb'
             ], args.max_seq_len, batch_size=args.batch_size, device=args.eval_device, train=False)
-            logger.log("PPL after pruning: {}".format(ppl))
+            print("PPL after pruning: {}".format(ppl))
 
     if args.test_after_prune:
         print("*" * 15)
@@ -915,8 +697,8 @@ def main(args):
             ], args.max_seq_len, batch_size=args.batch_size, device=args.eval_device)
         
         for key, value in metric.items():
-            logger.log("{} metric after pruning: {}".format(key, value))
-        logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+            print("{} metric after pruning: {}".format(key, value))
+        print("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning GPT2 (huggingface version)')
@@ -928,6 +710,7 @@ if __name__ == "__main__":
     # argument for pruning 
     parser.add_argument('--kq_mode', type=str, default="qr_pivot", help='kq prune')
     parser.add_argument('--reconstruct', action='store_true', help='if reconstruct weight')
+    parser.add_argument('--reconstruct_dense', action='store_true', help='if reconstruct weight of dense blocks')
     parser.add_argument('--prune_attn', action='store_true', help='if prune attention')
     parser.add_argument('--prune_mlp', action='store_true', help='if prune mlp')
     parser.add_argument('--pruning_ratio_attn', type=float, default=0.5, help='pruning ratio attn')
@@ -936,6 +719,7 @@ if __name__ == "__main__":
     parser.add_argument('--block_attention_layer_end', type=int, help='end layer of block attention layers', default=31)
     parser.add_argument('--block_mlp_layer_start', type=int, help='start layer of block mlp layers', default=3)
     parser.add_argument('--block_mlp_layer_end', type=int, help='end layer of block mlp layers', default=31)
+    parser.add_argument('--attn_mode', type=int, default=1, help='attn prune mode')
 
     # argument for generation dataset
     parser.add_argument('--dataset', type=str, default="wikitext2", help='data set name')

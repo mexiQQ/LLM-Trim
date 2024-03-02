@@ -304,7 +304,7 @@ def main(args):
         name_ = f"model.layers.{index}.self_attn"
         layer_ = module.self_attn
 
-        if args.reconstruct and index > args.block_attention_layer_start and index < args.block_attention_layer_end:
+        if args.reconstruct and index > args.block_attention_layer_start and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
                 for input_index in range(0, nsamples, batch_size):
                     inp = inputs[input_index:input_index+batch_size, :, :].cuda()
@@ -367,7 +367,7 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        if args.reconstruct and index > args.block_attention_layer_start and index < args.block_attention_layer_end:
+        if args.reconstruct and index > args.block_attention_layer_start and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
                 for input_index in range(0, nsamples, batch_size):
                     inp = inputs[input_index:input_index+batch_size, :, :].cuda()
@@ -407,7 +407,7 @@ def main(args):
 
         if args.prune_attn and index >= args.block_attention_layer_start and index < args.block_attention_layer_end:
 
-            mode = 1
+            mode = args.attn_mode
             if mode == 1:
                 current_channels = layer_.v_proj.weight.shape[0] 
                 n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
@@ -434,40 +434,31 @@ def main(args):
                 layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
 
             if mode == 2:
-                current_channels = layer_.v_proj.weight.shape[0] 
-                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
-                consecutive_groups = 128 
-                head_number = 32
-
                 A = layer_.v_proj.weight
                 B = layer_.o_proj.weight
                 cov_matrix = torch.load(f"/home/jli265/projects/LLM-Pruner/cov_attn/cov_matrix_{index}.pt").to(args.device).float()
-                imp_ov = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
+                imp = torch.mul(torch.norm(B, p=2, dim=0), torch.mul(torch.matmul(A, cov_matrix), A).sum(1))
+                
+                current_channels = A.shape[0] 
+                consecutive_groups = 128 # head dim
+                head_number = 32 
 
-                imp_k = torch.norm(layer_.k_proj.weight, p=2, dim=1)
-                imp_q = torch.norm(layer_.q_proj.weight, p=2, dim=1)
-                imp_kq = torch.mul(imp_k, imp_q)
+                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
+                max_val = imp.max() 
+                scaled_imp = imp / max_val
+                imp = scaled_imp.view(-1, consecutive_groups) 
+                imp_argsort = torch.argsort(imp, dim=1)
 
-                imp = torch.mul(imp_ov, imp_kq)
-                # imp = torch.add(imp_ov, imp_kq)
-                imp = imp.view(-1, consecutive_groups).sum(1)
-                imp_argsort = torch.argsort(imp)
-
-                pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)] # 129
-                group_size = consecutive_groups
-                pruning_idxs = torch.cat(
-                    [torch.tensor([j+group_size*i for j in range(group_size)])
-                        for i in pruning_groups], 0)
+                pruning_idxs = imp_argsort[:, :(n_pruned//(current_channels//consecutive_groups))]
+                pruning_idxs_base = torch.arange(pruning_idxs.size(0)).view(-1, 1)
+                pruning_idxs_base = pruning_idxs_base.expand_as(pruning_idxs).to(args.device)
+                pruning_idxs = pruning_idxs_base * consecutive_groups + pruning_idxs
+                pruning_idxs = pruning_idxs.view(-1)
 
                 _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
                 _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
-                _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
 
-                layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
-                layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
-                layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
-                layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
+                layer_.v_head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
 
         #########################################################################
         #########################################################################
@@ -502,7 +493,7 @@ def main(args):
         name_ = f"model.layers.{index}.mlp"
         layer_ = module.mlp
 
-        if args.reconstruct and index < args.block_mlp_layer_end:
+        if args.reconstruct and (index < args.block_mlp_layer_end or args.reconstruct_dense):
             with torch.no_grad():
                 for input_index in range(0, nsamples, batch_size):
                     inp = inputs[input_index:input_index+batch_size, :, :].cuda()
@@ -552,7 +543,7 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        if args.reconstruct and index < args.block_attention_layer_end:
+        if args.reconstruct and (index < args.block_attention_layer_end or args.reconstruct_dense):
             with torch.no_grad():
                 for input_index in range(0, nsamples, batch_size):
                     inp = inputs[input_index:input_index+batch_size, :, :].cuda()
@@ -718,6 +709,7 @@ if __name__ == "__main__":
     # argument for pruning 
     parser.add_argument('--kq_mode', type=str, default="qr_pivot", help='kq prune')
     parser.add_argument('--reconstruct', action='store_true', help='if reconstruct weight')
+    parser.add_argument('--reconstruct_dense', action='store_true', help='if reconstruct weight of dense blocks')
     parser.add_argument('--prune_attn', action='store_true', help='if prune attention')
     parser.add_argument('--prune_mlp', action='store_true', help='if prune mlp')
     parser.add_argument('--pruning_ratio_attn', type=float, default=0.5, help='pruning ratio attn')
@@ -726,6 +718,7 @@ if __name__ == "__main__":
     parser.add_argument('--block_attention_layer_end', type=int, help='end layer of block attention layers', default=31)
     parser.add_argument('--block_mlp_layer_start', type=int, help='start layer of block mlp layers', default=3)
     parser.add_argument('--block_mlp_layer_end', type=int, help='end layer of block mlp layers', default=31)
+    parser.add_argument('--attn_mode', type=int, default=1, help='attn prune mode')
 
     # argument for generation dataset
     parser.add_argument('--dataset', type=str, default="wikitext2", help='data set name')
