@@ -27,6 +27,8 @@ from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.datasets.ppl_dataset import get_loaders
 import copy
 from scipy import linalg
+import networkx as nx
+import matplotlib.pyplot as plt
 
 class LinearPruner(object):
     def __init__(self, pruning_dim=1):
@@ -118,7 +120,34 @@ def find_first_element_in_recursive_tuple(x):
     else:
         return x
 
-lm_head_hook_forbidden = False 
+def kl_divergence(p, q, epsilon=1e-9):
+    p_safe = torch.clamp(p, min=epsilon).view(-1, p.shape[-1])
+    q_safe = torch.clamp(q, min=epsilon).view(-1, p.shape[-1])
+    p_safe /= torch.sum(p_safe, dim=-1, keepdim=True)
+    q_safe /= torch.sum(q_safe, dim=-1, keepdim=True)
+    kl_div = torch.sum(q_safe * torch.log(q_safe/p_safe), dim=-1)
+    kl_div = torch.clamp(kl_div, min=0)
+    return kl_div
+
+def js_divergence(p, q):
+    m = 0.5 * (p + q)
+    js_div = torch.sqrt(0.5 * kl_divergence(p, m) + 0.5 * kl_divergence(p, m))
+    return js_div
+
+def pairwise_js_divergence(tensor):
+    N, n_heads, d, _ = tensor.shape
+    pairwise_divergence = torch.zeros((n_heads, n_heads), dtype=tensor.dtype, device=tensor.device)
+
+    for i in range(n_heads):
+        for j in range(i+1, n_heads):
+            p = tensor[:, i, :, :]
+            q = tensor[:, j, :, :]
+            div = js_divergence(p, q)
+            pairwise_divergence[i, j] = div.mean(dim=-1)
+            pairwise_divergence[j, i] = pairwise_divergence[i, j]
+
+    return pairwise_divergence
+
 def main(args):
     set_random_seed(args.seed)
     nbatches = args.nbatches 
@@ -175,13 +204,13 @@ def main(args):
                         find_first_element_in_recursive_tuple(input).cpu()
                     ), dim=0)
 
-            if name not in ori_outputs:
-                ori_outputs[name] = find_first_element_in_recursive_tuple(output).cpu()
-            else:
-                ori_outputs[name] = torch.cat((
-                    ori_outputs[name], 
-                    find_first_element_in_recursive_tuple(output).cpu()
-                ), dim=0)
+            # if name not in ori_outputs:
+            #     ori_outputs[name] = find_first_element_in_recursive_tuple(output).cpu()
+            # else:
+            #     ori_outputs[name] = torch.cat((
+            #         ori_outputs[name], 
+            #         find_first_element_in_recursive_tuple(output).cpu()
+            #     ), dim=0)
             return output
         return hook
 
@@ -273,11 +302,11 @@ def main(args):
         print("*" * 10, "Block", index, "*" * 10)
         module = model.model.layers[index]
 
-        handlers = {}
-        for name, layer in module.named_modules():
-            if type(layer) in [nn.Linear, LlamaAttention, LlamaMLP]:
-                ori_name = f"model.layers.{index}.{name}"
-                handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name))
+        # handlers = {}
+        # for name, layer in module.named_modules():
+        #     if type(layer) in [nn.Linear, LlamaAttention, LlamaMLP]:
+        #         ori_name = f"model.layers.{index}.{name}"
+        #         handlers[ori_name] = layer.register_forward_hook(create_hook2(ori_name))
         module.to(args.device)
 
         #########################################################################
@@ -389,7 +418,80 @@ def main(args):
 
         if args.prune_attn and index >= args.block_attention_layer_start and index < args.block_attention_layer_end:
 
-            mode = 1 
+            mode = args.attn_mode 
+            if mode == 0:
+                imp = None
+                similarity = None
+                with torch.no_grad():
+                    for input_index in range(0, nsamples, batch_size):
+                        inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                        res, _, _ = module(inp, attn_mask, pos_ids, output_attentions=True)
+                        attn_matrix = res[1]
+                        epsilon = 1e-10
+                        entropy = -torch.sum(attn_matrix * torch.log2(attn_matrix + epsilon), dim=-1)
+                        entropy = torch.mean(entropy, dim=-1)
+                        if imp is None:
+                            imp = torch.mean(entropy, dim = 0)/(nsamples//batch_size)
+                        else:
+                            imp += torch.mean(entropy, dim = 0)/(nsamples//batch_size)
+                        if similarity is None:
+                            similarity = pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
+                        else:
+                            similarity += pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
+
+                        del res
+                        del inp
+                        torch.cuda.empty_cache()
+                        data_index["start"] += batch_size 
+
+                    xtxs = {}
+                    xtys = {}
+                    xs = {}
+                    normalize_term = {}
+                    data_index = {"start": 0}
+                    torch.cuda.empty_cache()
+
+                    print(similarity)
+                    flat_similarity = similarity.view(-1)
+                    sorted_indices = torch.argsort(flat_similarity)
+                    plt.clf()
+                    G = nx.Graph()
+                    edges = []
+                    for idx in sorted_indices:
+                        i = (idx // similarity.shape[-1]).item()
+                        j = (idx % similarity.shape[-1]).item()
+                        print(f"Index: ({i}, {j}), Value: {flat_similarity[idx]}")
+                        if flat_similarity[idx] < 0.2 and (i, j) not in edges and (j, i) not in edges and i != j:
+                            edges.append((i, j))
+                    G.add_edges_from(edges)
+                    nx.draw(G, with_labels=True, font_weight='bold')
+                    plt.savefig(f"figures/head_similarity_{index}.png")
+                
+                if imp is not None:
+                    current_channels = layer_.v_proj.weight.shape[0] 
+                    n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
+                    consecutive_groups = 128
+                    head_number = 32 
+                    imp_argsort = torch.argsort(imp)
+                    print(imp_argsort)
+
+                    pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
+                    group_size = consecutive_groups
+                    pruning_idxs = torch.cat(
+                        [torch.tensor([j+group_size*i for j in range(group_size)])
+                            for i in pruning_groups], 0)
+
+                    _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
+
+                    layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
+                    layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
+                    layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
+                    layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim  
+
+
             if mode == 1:
                 current_channels = layer_.v_proj.weight.shape[0] 
                 n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
@@ -398,6 +500,7 @@ def main(args):
                 imp = torch.rand(current_channels).to(args.device)
                 imp = imp.view(-1, consecutive_groups).sum(1)
                 imp_argsort = torch.argsort(imp)
+                print(imp_argsort)
 
                 pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)] # 129
                 group_size = consecutive_groups
@@ -436,7 +539,7 @@ def main(args):
                 imp = imp.view(-1, consecutive_groups).sum(1)
                 imp_argsort = torch.argsort(imp)
 
-                pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)] # 129
+                pruning_groups = imp_argsort[4:4+(n_pruned//consecutive_groups)] # 129
                 group_size = consecutive_groups
                 pruning_idxs = torch.cat(
                     [torch.tensor([j+group_size*i for j in range(group_size)])
@@ -476,8 +579,10 @@ def main(args):
                     imp = imp / imp.sum()
                     imp_neg = 1 - imp
                     pruning_groups = torch.multinomial(imp_neg, n_pruned//consecutive_groups, replacement=False)
+                    # import pdb; pdb.set_trace()
                 else:
                     imp_argsort = torch.argsort(imp)
+                    # import pdb; pdb.set_trace()
                     pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
 
                 group_size = consecutive_groups
@@ -517,13 +622,14 @@ def main(args):
                 # imp = torch.add(imp_ov, imp_kq)
                 imp = imp.view(-1, consecutive_groups).sum(1)
 
-                sampling=True
+                sampling=False
                 if sampling:
                     imp = imp / imp.sum()
                     imp_neg = 1 - imp
                     pruning_groups = torch.multinomial(imp_neg, n_pruned//consecutive_groups, replacement=False)
                 else:
                     imp_argsort = torch.argsort(imp)
+                    print(imp_argsort)
                     pruning_groups = imp_argsort[:(n_pruned//consecutive_groups)]
 
                 group_size = consecutive_groups
@@ -541,6 +647,8 @@ def main(args):
                 layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
                 layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim
 
+
+            # 2nd prune ov in channel vise, random prune kq in channel vise
             if mode == 5:
                 A = layer_.v_proj.weight
                 B = layer_.o_proj.weight
@@ -586,6 +694,7 @@ def main(args):
                 layer_.rotary_emb.update_dim(dim=layer_.q_head_dim)
                 layer_.head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
 
+            # 2nd prune ov in channel vise, l2 prune kq in channel vise
             if mode == 6:
                 A = layer_.v_proj.weight
                 B = layer_.o_proj.weight
@@ -633,6 +742,7 @@ def main(args):
                 layer_.rotary_emb.update_dim(dim=layer_.q_head_dim)
                 layer_.head_dim = layer_.v_proj.weight.data.shape[0] // layer_.v_num_heads
 
+            # 2nd prune ov in channel vise, 2nd prune kq in channel vise
             if mode == 7:
                 A = layer_.v_proj.weight
                 B = layer_.o_proj.weight
@@ -686,28 +796,28 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        ori_y = ori_outputs[name_]
-        attn_loss = 0
-        with torch.no_grad():
-            for input_index in range(0, nsamples, batch_size):
-                inp = inputs[input_index:input_index+batch_size, :, :].cuda()
-                _, res, _ = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
-                attn_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
-                del res
-                del inp
-                torch.cuda.empty_cache()
-                data_index["start"] += batch_size 
+        # ori_y = ori_outputs[name_]
+        # attn_loss = 0
+        # with torch.no_grad():
+        #     for input_index in range(0, nsamples, batch_size):
+        #         inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+        #         _, res, _ = module(inp, attn_mask, pos_ids)
+        #         y_label = ori_y[input_index:input_index+batch_size, :, :]
+        #         attn_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
+        #         del res
+        #         del inp
+        #         torch.cuda.empty_cache()
+        #         data_index["start"] += batch_size 
 
-        attn_loss /= math.ceil(nsamples/batch_size)
-        print(f"{name_} reconstruct error is", attn_loss)
+        # attn_loss /= math.ceil(nsamples/batch_size)
+        # print(f"{name_} reconstruct error is", attn_loss)
 
-        xtxs = {}
-        xtys = {}
-        xs = {}
-        normalize_term = {}
-        data_index = {"start": 0}
-        torch.cuda.empty_cache()
+        # xtxs = {}
+        # xtys = {}
+        # xs = {}
+        # normalize_term = {}
+        # data_index = {"start": 0}
+        # torch.cuda.empty_cache()
 
         #########################################################################
         #########################################################################
@@ -831,28 +941,28 @@ def main(args):
         #########################################################################
         #########################################################################
 
-        ori_y = ori_outputs[name_]
-        mlp_loss = 0
-        with torch.no_grad():
-            for input_index in range(0, nsamples, batch_size):
-                inp = inputs[input_index:input_index+batch_size, :, :].cuda()
-                _, _, res = module(inp, attn_mask, pos_ids)
-                y_label = ori_y[input_index:input_index+batch_size, :, :]
-                mlp_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
-                del res
-                del inp
-                torch.cuda.empty_cache()
-                data_index["start"] += batch_size 
+        # ori_y = ori_outputs[name_]
+        # mlp_loss = 0
+        # with torch.no_grad():
+        #     for input_index in range(0, nsamples, batch_size):
+        #         inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+        #         _, _, res = module(inp, attn_mask, pos_ids)
+        #         y_label = ori_y[input_index:input_index+batch_size, :, :]
+        #         mlp_loss += mse(find_first_element_in_recursive_tuple(res).cpu(), y_label).item()
+        #         del res
+        #         del inp
+        #         torch.cuda.empty_cache()
+        #         data_index["start"] += batch_size 
 
-        mlp_loss /= math.ceil(nsamples/batch_size)
-        print(f"{name_} reconstruct error is", mlp_loss)
+        # mlp_loss /= math.ceil(nsamples/batch_size)
+        # print(f"{name_} reconstruct error is", mlp_loss)
 
-        xtxs = {}
-        xtys = {}
-        xs = {}
-        normalize_term = {}
-        data_index = {"start": 0}
-        torch.cuda.empty_cache()
+        # xtxs = {}
+        # xtys = {}
+        # xs = {}
+        # normalize_term = {}
+        # data_index = {"start": 0}
+        # torch.cuda.empty_cache()
 
         #########################################################################
         #########################################################################
@@ -936,6 +1046,7 @@ if __name__ == "__main__":
     parser.add_argument('--block_attention_layer_end', type=int, help='end layer of block attention layers', default=31)
     parser.add_argument('--block_mlp_layer_start', type=int, help='start layer of block mlp layers', default=3)
     parser.add_argument('--block_mlp_layer_end', type=int, help='end layer of block mlp layers', default=31)
+    parser.add_argument('--attn_mode', type=int, default=1)
 
     # argument for generation dataset
     parser.add_argument('--dataset', type=str, default="wikitext2", help='data set name')
