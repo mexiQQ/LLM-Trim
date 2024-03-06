@@ -27,6 +27,8 @@ from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.datasets.ppl_dataset import get_loaders
 import copy
 from scipy import linalg
+import networkx as nx
+import matplotlib.pyplot as plt
 
 class LinearPruner(object):
     def __init__(self, pruning_dim=1):
@@ -118,7 +120,34 @@ def find_first_element_in_recursive_tuple(x):
     else:
         return x
 
-lm_head_hook_forbidden = False 
+def kl_divergence(p, q, epsilon=1e-9):
+    p_safe = torch.clamp(p, min=epsilon).view(-1, p.shape[-1])
+    q_safe = torch.clamp(q, min=epsilon).view(-1, p.shape[-1])
+    p_safe /= torch.sum(p_safe, dim=-1, keepdim=True)
+    q_safe /= torch.sum(q_safe, dim=-1, keepdim=True)
+    kl_div = torch.sum(q_safe * torch.log(q_safe/p_safe), dim=-1)
+    kl_div = torch.clamp(kl_div, min=0)
+    return kl_div
+
+def js_divergence(p, q):
+    m = 0.5 * (p + q)
+    js_div = torch.sqrt(0.5 * kl_divergence(p, m) + 0.5 * kl_divergence(p, m))
+    return js_div
+
+def pairwise_js_divergence(tensor):
+    N, n_heads, d, _ = tensor.shape
+    pairwise_divergence = torch.zeros((n_heads, n_heads), dtype=tensor.dtype, device=tensor.device)
+
+    for i in range(n_heads):
+        for j in range(i+1, n_heads):
+            p = tensor[:, i, :, :]
+            q = tensor[:, j, :, :]
+            div = js_divergence(p, q)
+            pairwise_divergence[i, j] = div.mean(dim=-1)
+            pairwise_divergence[j, i] = pairwise_divergence[i, j]
+
+    return pairwise_divergence
+
 def main(args):
     set_random_seed(args.seed)
     nbatches = args.nbatches 
@@ -298,6 +327,9 @@ def main(args):
                 data_index["start"] += module_batch_size 
         data_index = {"start": 0}
 
+        for key in target_handlers.keys():
+            target_handlers[key].remove()
+
         #########################################################################
         #########################################################################
         
@@ -408,6 +440,87 @@ def main(args):
         if args.prune_attn and index >= args.block_attention_layer_start and index < args.block_attention_layer_end:
 
             mode = args.attn_mode
+            if mode == 0:
+                imp = None
+                similarity = None
+                with torch.no_grad():
+                    for input_index in range(0, nsamples, batch_size):
+                        temp_attn_mask = ori_attention_mask[start_key].expand(batch_size, -1, -1, -1).cuda()
+                        inp = inputs[input_index:input_index+batch_size, :, :].cuda()
+                        res, _, _ = target_module(inp, temp_attn_mask, pos_ids, output_attentions=True)
+                        attn_matrix = res[1]
+                        epsilon = 1e-10
+                        entropy = -torch.sum(attn_matrix * torch.log2(attn_matrix + epsilon), dim=-1)
+                        entropy = torch.mean(entropy, dim=-1)
+                        if imp is None:
+                            imp = torch.mean(entropy, dim = 0)
+                        else:
+                            imp += torch.mean(entropy, dim = 0)
+                        if similarity is None:
+                            similarity = pairwise_js_divergence(attn_matrix)
+                        else:
+                            similarity += pairwise_js_divergence(attn_matrix)
+
+                        del res
+                        del inp
+                        del temp_attn_mask
+                        torch.cuda.empty_cache()
+                        data_index["start"] += batch_size 
+                        break
+                data_index = {"start": 0}
+
+                current_channels = layer_.v_proj.weight.shape[0] 
+                n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
+                consecutive_groups = 128
+                head_number = 32 
+                imp_argsort = torch.argsort(imp)
+                n_pruned_head = n_pruned//consecutive_groups
+                print(imp_argsort)
+
+                print(similarity)
+                flat_similarity = similarity.view(-1)
+                sorted_indices = torch.argsort(flat_similarity)
+                # plt.clf()
+                # G = nx.Graph()
+                edges = []
+                candidates_removed_head = []
+                for idx in sorted_indices:
+                    i = (idx // similarity.shape[-1]).item()
+                    j = (idx % similarity.shape[-1]).item()
+                    if flat_similarity[idx] < 0.2 and\
+                        (i, j) not in edges and\
+                        (j, i) not in edges and i != j:# and\
+                    #   len(candidates_removed_head) < n_pruned_head:
+                        print(f"Index: ({i}, {j}), Value: {flat_similarity[idx]}") 
+                        edges.append((i, j))
+                        if i not in candidates_removed_head and j not in candidates_removed_head:
+                            candidates_removed_head.append(i)
+                # G.add_edges_from(edges)
+                # nx.draw(G, with_labels=True, font_weight='bold')
+                # plt.savefig(f"figures/head_similarity_{index}.png")
+            
+                print(f"Number of duplicate heads for block {index}: {len(candidates_removed_head)}")
+                # for i in imp_argsort:
+                #     if len(candidates_removed_head) < n_pruned_head and\
+                #      i not in candidates_removed_head:
+                #         candidates_removed_head.append(i)
+
+                if candidates_removed_head:
+                    group_size = consecutive_groups
+                    pruning_idxs = torch.cat(
+                        [torch.tensor([j+group_size*i for j in range(group_size)])
+                            for i in candidates_removed_head], 0)
+
+                    _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
+
+                    layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
+                    layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
+                    layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
+                    layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim  
+                
             if mode == 1:
                 current_channels = layer_.v_proj.weight.shape[0] 
                 n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
@@ -656,9 +769,7 @@ def main(args):
         ori_outputs = {}
         for key in handlers.keys():
             handlers[key].remove()
-        for key in target_handlers.keys():
-            handlers[key].remove()
-
+ 
         module.to("cpu")
         target_module.to("cpu")
 

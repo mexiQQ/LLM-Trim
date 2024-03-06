@@ -149,17 +149,22 @@ def pairwise_js_divergence(tensor):
     return pairwise_divergence
 
 def main(args):
+    print("\n" * 10)
+    print("*" * 10)
+    print("*" * 10)
+    print("*" * 10)
+    print(f"\Args: {args}")
     set_random_seed(args.seed)
     nbatches = args.nbatches 
     batch_size = args.batch_size 
     nsamples = batch_size * nbatches 
 
-    logger = LoggerWithDepth(
-        env_name="{}".format(args.save_ckpt_log_name), 
-        config=args.__dict__,
-        root_dir='prune_logs',
-        setup_sublogger=True
-    )
+    # logger = LoggerWithDepth(
+    #     env_name="{}".format(args.save_ckpt_log_name), 
+    #     config=args.__dict__,
+    #     root_dir='prune_logs',
+    #     setup_sublogger=True
+    # )
 
     tokenizer = LlamaTokenizer.from_pretrained(args.base_model)
     model = LlamaForCausalLM.from_pretrained(
@@ -241,7 +246,7 @@ def main(args):
 
     for _,handler in handlers.items():
         handler.remove()
-    logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+    print("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
     del model
     torch.cuda.empty_cache()
 
@@ -434,40 +439,87 @@ def main(args):
                             imp = torch.mean(entropy, dim = 0)/(nsamples//batch_size)
                         else:
                             imp += torch.mean(entropy, dim = 0)/(nsamples//batch_size)
-                        if similarity is None:
-                            similarity = pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
-                        else:
-                            similarity += pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
+                        # if similarity is None:
+                        similarity = pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
+                        # else:
+                        #     similarity += pairwise_js_divergence(attn_matrix)/(nsamples//batch_size)
 
                         del res
                         del inp
                         torch.cuda.empty_cache()
-                        data_index["start"] += batch_size 
+                        data_index["start"] += batch_size
 
-                    xtxs = {}
-                    xtys = {}
-                    xs = {}
-                    normalize_term = {}
-                    data_index = {"start": 0}
-                    torch.cuda.empty_cache()
+                xtxs = {}
+                xtys = {}
+                xs = {}
+                normalize_term = {}
+                data_index = {"start": 0}
+                torch.cuda.empty_cache()
+
+                remove_duplicate = True
+                if remove_duplicate:
+                    current_channels = layer_.v_proj.weight.shape[0] 
+                    n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
+                    consecutive_groups = 128
+                    head_number = 32 
+                    imp_argsort = torch.argsort(imp)
+                    n_pruned_head = n_pruned//consecutive_groups
+                    print(imp_argsort)
 
                     print(similarity)
                     flat_similarity = similarity.view(-1)
                     sorted_indices = torch.argsort(flat_similarity)
-                    plt.clf()
-                    G = nx.Graph()
+                    # plt.clf()
+                    # G = nx.Graph()
                     edges = []
+                    candidates_removed_head = []
                     for idx in sorted_indices:
                         i = (idx // similarity.shape[-1]).item()
                         j = (idx % similarity.shape[-1]).item()
-                        print(f"Index: ({i}, {j}), Value: {flat_similarity[idx]}")
-                        if flat_similarity[idx] < 0.2 and (i, j) not in edges and (j, i) not in edges and i != j:
+                        if flat_similarity[idx] < 0.21 and\
+                         (i, j) not in edges and\
+                          (j, i) not in edges and i != j:# and\
+                        #   len(candidates_removed_head) < n_pruned_head:
+                            print(f"Index: ({i}, {j}), Value: {flat_similarity[idx]}") 
                             edges.append((i, j))
-                    G.add_edges_from(edges)
-                    nx.draw(G, with_labels=True, font_weight='bold')
-                    plt.savefig(f"figures/head_similarity_{index}.png")
-                
-                if imp is not None:
+                            if i not in candidates_removed_head and j not in candidates_removed_head:
+                                candidates_removed_head.append(i)
+                            # if i in candidates_removed_head and j not in candidates_removed_head:
+                            #     candidates_removed_head.append(j)
+                            # if i not in candidates_removed_head and j in candidates_removed_head:
+                            #     candidates_removed_head.append(i)
+                       
+                    # G.add_edges_from(edges)
+                    # nx.draw(G, with_labels=True, font_weight='bold')
+                    # plt.savefig(f"figures/head_similarity_{index}.png")
+                    
+                    # for i in imp_argsort:
+                    #     if len(candidates_removed_head) < n_pruned_head and\
+                    #      i not in candidates_removed_head:
+                    #         candidates_removed_head.append(i)
+
+                    print(f"Number of duplicate heads for block {index}: {len(candidates_removed_head)}")
+
+                    for i in imp_argsort:
+                        if len(candidates_removed_head) < 8 and\
+                        i not in candidates_removed_head:
+                            candidates_removed_head.append(i)
+                    
+                    group_size = consecutive_groups
+                    pruning_idxs = torch.cat(
+                        [torch.tensor([j+group_size*i for j in range(group_size)])
+                            for i in candidates_removed_head], 0)
+
+                    _ = pruner.prune_out_channels(layer_.v_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_in_channels(layer_.o_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.k_proj, idxs=pruning_idxs.tolist())
+                    _ = pruner.prune_out_channels(layer_.q_proj, idxs=pruning_idxs.tolist())
+
+                    layer_.q_num_heads = layer_.q_proj.weight.data.shape[0] // layer_.q_head_dim
+                    layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
+                    layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
+                    layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim  
+                else:
                     current_channels = layer_.v_proj.weight.shape[0] 
                     n_pruned = math.ceil(current_channels * args.pruning_ratio_attn)
                     consecutive_groups = 128
@@ -490,7 +542,6 @@ def main(args):
                     layer_.k_num_heads = layer_.k_proj.weight.data.shape[0] // layer_.k_head_dim
                     layer_.v_num_heads = layer_.v_proj.weight.data.shape[0] // layer_.v_head_dim
                     layer_.num_heads = layer_.v_proj.weight.data.shape[0] // layer_.head_dim  
-
 
             if mode == 1:
                 current_channels = layer_.v_proj.weight.shape[0] 
@@ -997,7 +1048,7 @@ def main(args):
         torch.cuda.empty_cache()
 
     after_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.log("#Param before: {}, #Param after: {}, Ratio = {:.4f}%".format(before_pruning_parameters, after_pruning_parameters,  100.0*after_pruning_parameters/before_pruning_parameters))
+    print("#Param before: {}, #Param after: {}, Ratio = {:.4f}%".format(before_pruning_parameters, after_pruning_parameters,  100.0*after_pruning_parameters/before_pruning_parameters))
 
     if args.save_model:
         # torch.save(model, f"llama_sparse.pt")
@@ -1006,9 +1057,9 @@ def main(args):
             model.to(args.device)
             ppl = PPLMetric(model, tokenizer, [
                 'wikitext2', 
-                # 'ptb'
+                'ptb'
             ], args.max_seq_len, batch_size=args.batch_size, device=args.eval_device, train=False)
-            logger.log("PPL after pruning: {}".format(ppl))
+            print("PPL after pruning: {}".format(ppl))
 
     if args.test_after_prune:
         print("*" * 15)
@@ -1025,8 +1076,8 @@ def main(args):
             ], args.max_seq_len, batch_size=args.batch_size, device=args.eval_device)
         
         for key, value in metric.items():
-            logger.log("{} metric after pruning: {}".format(key, value))
-        logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+            print("{} metric after pruning: {}".format(key, value))
+        print("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning GPT2 (huggingface version)')

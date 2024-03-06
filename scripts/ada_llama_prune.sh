@@ -1,5 +1,5 @@
 echo "[START] - Start Pruning Model"
-CUDA_VISIBLE_DEVICES=1 python hf_prune_llama_layerwise.py \
+CUDA_VISIBLE_DEVICES=0 python -u hf_prune_llama_layerwise.py \
     --base_model baffo32/decapoda-research-llama-7B-hf \
     --device cuda \
     --eval_device cuda \
@@ -7,20 +7,22 @@ CUDA_VISIBLE_DEVICES=1 python hf_prune_llama_layerwise.py \
     --block_mlp_layer_end 30 \
     --block_attention_layer_start 4 \
     --block_attention_layer_end 30 \
-    --pruning_ratio_attn 0.25 \
-    --pruning_ratio_mlp 0.25 \
+    --pruning_ratio_attn 0.6 \
+    --pruning_ratio_mlp 0.6 \
     --kq_mode qr_pivot \
     --seed 42 \
     --batch_size 64 \
-    --nbatches 1 \
+    --nbatches 20 \
     --max_seq_len 128 \
     --attn_mode 0 \
     --save_model \
     --prune_attn \
-    --prune_mlp
+    --prune_mlp >> logs/output.txt
 echo "[FINISH] - Finish Pruning Model"
 
 
+# jeffwan/llama-13b-hf
+# baffo32/decapoda-research-llama-7B-hf
 
 # [17,  7, 18,  0, 15,  4,  2, 27,             1, 26, 28, 12, 20,  3, 24, 25, 10, 14, 23,  8, 30, 29, 11, 22,  6,  5, 19, 31, 13,  9, 21, 16]
 # tensor([59.8818, 60.3009, 60.2716, 62.5571, 59.9677, 66.2664, 66.1047, 59.7818,                                                        │
